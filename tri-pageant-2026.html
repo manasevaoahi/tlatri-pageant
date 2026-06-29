@@ -532,6 +532,7 @@ textarea.form-input{resize:vertical;min-height:60px;}
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -827,6 +828,138 @@ var projTimer=null;
 var pinBuf='';
 var pinBgMap={judge:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%238B7FFF' opacity='0.12'%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(0 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(45 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(90 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(135 80 80)'/%3E%3Ccircle cx='80' cy='80' r='6'/%3E%3C/g%3E%3C/svg%3E",admin:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%23C9A84C' opacity='0.1'%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(0 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(30 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(60 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(90 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(120 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(150 80 80)'/%3E%3Ccircle cx='80' cy='80' r='7'/%3E%3C/g%3E%3C/svg%3E",auditor:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%23FF7BAD' opacity='0.1'%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(0 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(45 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(90 80 80)'/%3E%3Cellipse cx='80' cy='80' rx='7' ry='20' transform='rotate(135 80 80)'/%3E%3Ccircle cx='80' cy='80' r='6'/%3E%3C/g%3E%3C/svg%3E"};
 
+// ==========================================
+// SUPABASE INITIALIZATION
+// ==========================================
+const SUPABASE_URL = 'https://mosisjkjrerskvaewctl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vc2lzamtqcmVyc2t2YWV3Y3RsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjgyOTQsImV4cCI6MjA5ODMwNDI5NH0.iiricCSEOcOIqZJR_38QYQnJg3WQxDwcygFdFrG0CZ8';
+
+let supabaseClient = null;
+let realtimeSubscriptions = [];
+
+async function initSupabase() {
+  const { createClient } = window.supabase;
+  
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  console.log('✅ Supabase initialized and listening for real-time updates');
+  
+  // Load initial data
+  await loadScoresFromSupabase();
+  await loadApprovalsFromSupabase();
+  
+  // Subscribe to REAL-TIME score updates (newer Supabase syntax)
+  supabaseClient
+    .channel('scores-channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'scores' },
+      (payload) => {
+        console.log('Score update received:', payload);
+        loadScoresFromSupabase();
+        renderProjector();
+      }
+    )
+    .subscribe();
+  
+  // Subscribe to REAL-TIME approval updates
+  supabaseClient
+    .channel('approvals-channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'approvals' },
+      (payload) => {
+        console.log('Approval update received:', payload);
+        loadApprovalsFromSupabase();
+      }
+    )
+    .subscribe();
+}
+
+async function loadScoresFromSupabase() {
+  if (!supabaseClient) return;
+  
+  const { data, error } = await supabaseClient
+    .from('scores')
+    .select('*');
+  
+  if (error) {
+    console.error('Error loading scores:', error);
+    return;
+  }
+  
+  APP.scores = {};
+  data.forEach(record => {
+    const key = `${record.event_id}__${record.contestant_id}__${record.judge_id}`;
+    APP.scores[key] = record.score;
+  });
+  
+  console.log('✅ Scores loaded from Supabase:', APP.scores);
+}
+
+async function loadApprovalsFromSupabase() {
+  if (!supabaseClient) return;
+  
+  const { data, error } = await supabaseClient
+    .from('approvals')
+    .select('*');
+  
+  if (error) {
+    console.error('Error loading approvals:', error);
+    return;
+  }
+  
+  APP.displayReleased = {};
+  data.forEach(record => {
+    if (record.published_to_display) {
+      APP.displayReleased[record.event_id] = true;
+    }
+  });
+  
+  console.log('✅ Approvals loaded from Supabase:', APP.displayReleased);
+}
+
+async function saveScoreToSupabase(eventId, contestantId, judgeId, score) {
+  if (!supabaseClient) return;
+  
+  const { error } = await supabaseClient
+    .from('scores')
+    .upsert({
+      event_id: eventId,
+      contestant_id: contestantId,
+      judge_id: judgeId,
+      score: score,
+      submitted_at: new Date().toISOString()
+    });
+  
+  if (error) {
+    console.error('Error saving score to Supabase:', error);
+    alert('Error saving score. Please try again.');
+    return;
+  }
+  
+  console.log('✅ Score saved to Supabase:', { eventId, contestantId, judgeId, score });
+}
+
+async function saveApprovalToSupabase(eventId, publishedToDisplay) {
+  if (!supabaseClient) return;
+  
+  const { error } = await supabaseClient
+    .from('approvals')
+    .upsert({
+      event_id: eventId,
+      published_to_display: publishedToDisplay,
+      updated_at: new Date().toISOString()
+    });
+  
+  if (error) {
+    console.error('Error saving approval to Supabase:', error);
+    return;
+  }
+  
+  console.log('✅ Approval saved to Supabase:', { eventId, publishedToDisplay });
+}
+
 // ══════ INIT ══════
 // ══════════════════════════════════════════════════════════════
 // LOCAL STORAGE ONLY MODE (Firebase removed)
@@ -930,7 +1063,8 @@ function fbMonitorConnection(){
 }
 
 
-function init(){
+async function init(){
+  await initSupabase();
   loadState();
   showLoadingScreen();
   // Local-only mode — no Firebase
@@ -1326,7 +1460,7 @@ function renderCriteriaForm(evName,c){
 function updSl(i,m){const s=document.getElementById(`sl_${i}`),n=document.getElementById(`nm_${i}`);let v=Math.min(m,Math.max(0,parseInt(s.value)||0));n.value=v;recalc();}
 function updNm(i,m){const n=document.getElementById(`nm_${i}`),s=document.getElementById(`sl_${i}`);let v=Math.min(m,Math.max(0,parseInt(n.value)||0));n.value=v;s.value=v;recalc();}
 function recalc(){let t=0;PD.events[APP.currentEvent].criteria.forEach((_,i)=>{t+=parseInt(document.getElementById(`nm_${i}`)?.value||0);});const el=document.getElementById('totalDisp');if(el)el.textContent=t;}
-function submitScore(){
+async function submitScore(){
   const ev=APP.currentEvent,ed=PD.events[ev],c=APP.currentContestant;
   const crit=ed.criteria.map((_,i)=>parseInt(document.getElementById(`nm_${i}`)?.value||0));
   const total=crit.reduce((a,b)=>a+b,0),k=`${ev}__${c.id}__${APP.currentJudge.id}`;
@@ -1334,6 +1468,7 @@ function submitScore(){
   APP.scores[k]=scoreData;
   if(APP.unlockedScores[k])delete APP.unlockedScores[k];
   saveStateLocal();
+  await saveScoreToSupabase(ev, c.id, APP.currentJudge.id, total);
   toast('✓ Submitted: '+c.name+' — '+total+'/'+ed.max+'. View in "My Submitted Scores" tab.','success');
   APP.currentContestant=null;renderScoringForm();
 }
