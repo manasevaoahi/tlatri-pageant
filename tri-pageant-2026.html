@@ -891,7 +891,7 @@ async function loadScoresFromSupabase() {
   APP.scores = {};
   data.forEach(record => {
     const key = `${record.event_id}__${record.contestant_id}__${record.judge_id}`;
-    APP.scores[key] = record.score;
+    APP.scores[key] = record.score_data;
   });
   
   console.log('✅ Scores loaded from Supabase:', APP.scores);
@@ -919,7 +919,7 @@ async function loadApprovalsFromSupabase() {
   console.log('✅ Approvals loaded from Supabase:', APP.displayReleased);
 }
 
-async function saveScoreToSupabase(eventId, contestantId, judgeId, score) {
+async function saveScoreToSupabase(eventId, contestantId, judgeId, scoreData) {
   if (!supabaseClient) return;
   
   const { error } = await supabaseClient
@@ -928,9 +928,9 @@ async function saveScoreToSupabase(eventId, contestantId, judgeId, score) {
       event_id: eventId,
       contestant_id: contestantId,
       judge_id: judgeId,
-      score: score,
+      score_data: scoreData,
       submitted_at: new Date().toISOString()
-    });
+    }, { onConflict: 'event_id,contestant_id,judge_id' });
   
   if (error) {
     console.error('Error saving score to Supabase:', error);
@@ -938,7 +938,7 @@ async function saveScoreToSupabase(eventId, contestantId, judgeId, score) {
     return;
   }
   
-  console.log('✅ Score saved to Supabase:', { eventId, contestantId, judgeId, score });
+  console.log('✅ Score saved to Supabase:', { eventId, contestantId, judgeId, scoreData });
 }
 
 async function saveApprovalToSupabase(eventId, publishedToDisplay) {
@@ -1468,7 +1468,7 @@ async function submitScore(){
   APP.scores[k]=scoreData;
   if(APP.unlockedScores[k])delete APP.unlockedScores[k];
   saveStateLocal();
-  await saveScoreToSupabase(ev, c.id, APP.currentJudge.id, total);
+  await saveScoreToSupabase(ev, c.id, APP.currentJudge.id, scoreData);
   toast('✓ Submitted: '+c.name+' — '+total+'/'+ed.max+'. View in "My Submitted Scores" tab.','success');
   APP.currentContestant=null;renderScoringForm();
 }
