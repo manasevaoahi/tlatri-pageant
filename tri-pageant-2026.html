@@ -847,6 +847,7 @@ async function initSupabase() {
   // Load initial data
   await loadScoresFromSupabase();
   await loadApprovalsFromSupabase();
+  await loadAppStateFromSupabase();
   
   // Subscribe to REAL-TIME score updates (newer Supabase syntax)
   supabaseClient
@@ -856,8 +857,7 @@ async function initSupabase() {
       { event: '*', schema: 'public', table: 'scores' },
       (payload) => {
         console.log('Score update received:', payload);
-        loadScoresFromSupabase();
-        renderProjector();
+        loadScoresFromSupabase().then(refreshCurrentScreen);
       }
     )
     .subscribe();
@@ -870,10 +870,100 @@ async function initSupabase() {
       { event: '*', schema: 'public', table: 'approvals' },
       (payload) => {
         console.log('Approval update received:', payload);
-        loadApprovalsFromSupabase();
+        loadApprovalsFromSupabase().then(refreshCurrentScreen);
       }
     )
     .subscribe();
+
+  // Subscribe to REAL-TIME setup data updates (contestants, judges, auditors, settings)
+  supabaseClient
+    .channel('app-state-channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'app_state' },
+      (payload) => {
+        console.log('App setup data update received:', payload);
+        loadAppStateFromSupabase().then(refreshCurrentScreen);
+      }
+    )
+    .subscribe();
+}
+
+// Bundle of "setup" data that must be identical across every device.
+// Scores and display-approvals are NOT included here — they already have
+// their own dedicated tables and real-time subscriptions.
+function buildAppStateBundle(){
+  return {
+    contestants: APP.contestants,
+    judges: APP.judges,
+    auditors: APP.auditors,
+    awards: APP.awards,
+    displayMode: APP.displayMode,
+    displaySettings: APP.displaySettings,
+    lockedEvents: APP.lockedEvents,
+    activeJudgingEvent: APP.activeJudgingEvent,
+    readyForMC: APP.readyForMC,
+    overallReadyForMC: APP.overallReadyForMC,
+    testMode: APP.testMode,
+    resubRequests: APP.resubRequests
+  };
+}
+
+var appStateSyncTimer = null;
+function queueAppStateSync(){
+  // Small debounce so rapid successive edits don't spam the database
+  if (appStateSyncTimer) clearTimeout(appStateSyncTimer);
+  appStateSyncTimer = setTimeout(saveAppStateToSupabase, 400);
+}
+
+async function saveAppStateToSupabase(){
+  if (!supabaseClient) return;
+  const bundle = buildAppStateBundle();
+  const { error } = await supabaseClient
+    .from('app_state')
+    .upsert({ id: 1, data: bundle, updated_at: new Date().toISOString() });
+  if (error) {
+    console.error('Error saving app setup data to Supabase:', error);
+  } else {
+    console.log('✅ Setup data (contestants/judges/settings) synced to all devices');
+  }
+}
+
+async function loadAppStateFromSupabase(){
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient
+    .from('app_state')
+    .select('*')
+    .eq('id', 1)
+    .maybeSingle();
+  if (error) {
+    console.error('Error loading app setup data from Supabase:', error);
+    return;
+  }
+  if (data && data.data) {
+    Object.assign(APP, data.data);
+    console.log('✅ Setup data loaded from Supabase');
+  }
+}
+
+// Re-renders whatever screen is currently on-screen after new data arrives
+// from another device, without needing a manual page refresh.
+function refreshCurrentScreen(){
+  saveStateLocal();
+  if (APP.currentScreenName === 'projector') { renderProjector(); return; }
+  if (APP.currentRole === 'mc' && APP.currentScreenName === 'mc') { renderMCScreen(); return; }
+  if (APP.currentRole === 'auditor' && APP.currentScreenName === 'auditor') {
+    auditorTab(APP.currentAuditorTab || 'rankings', null);
+    return;
+  }
+  if (APP.currentRole === 'admin' && APP.currentScreenName === 'admin') {
+    adminTab(APP.currentAdminTab || 'contestants', null);
+    return;
+  }
+  if (APP.currentRole === 'judge' && APP.currentScreenName === 'judge') {
+    renderJudgeScreen();
+    return;
+  }
 }
 
 async function loadScoresFromSupabase() {
@@ -1064,10 +1154,9 @@ function fbMonitorConnection(){
 
 
 async function init(){
-  await initSupabase();
   loadState();
   showLoadingScreen();
-  // Local-only mode — no Firebase
+  await initSupabase();
   setTimeout(finishInit, 300);
 }
 
@@ -1187,6 +1276,7 @@ function loadState(){
 }
 function saveState(){
   saveStateLocal();
+  queueAppStateSync();
 }
 
 // ══════ OFFLINE ══════
@@ -1501,6 +1591,7 @@ function getDayTotal(cid,cat,day){
 // ══════ ADMIN ══════
 function renderAdminScreen(){adminTab('contestants',null);}
 function adminTab(tab,btn){
+  APP.currentAdminTab=tab; // Track for cross-device refresh
   if(btn){document.querySelectorAll('#screen-admin .tabs .tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');}
   const C=document.getElementById('adminContent');
   if(tab==='contestants'){
@@ -1680,16 +1771,25 @@ function remAward(i){APP.awards.splice(i,1);saveState();adminTab('awards',null);
 function addAward(){APP.awards.push({name:'New Award',winner:''});saveState();adminTab('awards',null);}
 function toggleTestMode(){APP.testMode=!APP.testMode;saveState();applyTestBanners();adminTab('settings',null);toast(`Testing mode ${APP.testMode?'ON':'OFF'}`,'info');}
 function confirmClear(){showModal('Reset All Scores to Zero','⚠️ This will permanently reset ALL submitted scores to zero. Judges will need to re-score. Cannot be undone.','<button class="btn-danger" onclick="clearAll()">Yes, Reset All to Zero</button><button class="btn-secondary" onclick="closeModal()">Cancel</button>');}
-function clearAll(){
+async function clearAll(){
   APP.scores={};APP.unlockedScores={};APP.lockedEvents={};APP.resubRequests={};
   // ✅ ALSO RESET DISPLAY CONTROLS when scores are cleared
   APP.displayReleased={};
   APP.readyForMC={};
   APP.overallReadyForMC={};
-  saveStateLocal();
+  saveState(); // saves locally AND pushes settings/lockedEvents reset to all devices
+  await clearScoresAndApprovalsInSupabase(); // wipes the shared scores/approvals so they don't come back on other devices
   toast('✅ All scores reset to zero - Display controls also cleared','success');
   closeModal();
   if(APP.currentRole==='admin')adminTab('results',null);
+}
+
+async function clearScoresAndApprovalsInSupabase(){
+  if (!supabaseClient) return;
+  const { error: scoresErr } = await supabaseClient.from('scores').delete().neq('event_id', '__none__');
+  if (scoresErr) console.error('Error clearing scores in Supabase:', scoresErr);
+  const { error: approvalsErr } = await supabaseClient.from('approvals').delete().neq('event_id', '__none__');
+  if (approvalsErr) console.error('Error clearing approvals in Supabase:', approvalsErr);
 }
 
 // ══════ AUDITOR ══════
@@ -2965,24 +3065,17 @@ function releaseOverallRankings(cat){
 
 
 // ═══ AUTO-REFRESH FOR REAL-TIME SYNC ═══
-// Refresh MC and Display screens every 2 seconds to sync data across devices
+// Live updates normally arrive instantly via the Supabase real-time
+// subscriptions set up in initSupabase(). This timer is just a safety net
+// in case a real-time message is ever missed (e.g. brief network hiccup).
 function setupAutoRefresh(){
-  setInterval(function(){
-    loadState(); // Reload from localStorage ✅ FIXED: was loadStateLocal (save function) instead of loadState (load function)
-    if(APP.currentRole==='mc' && APP.currentScreenName==='mc'){
-      renderMCScreen();
-    }else if(APP.currentRole==='auditor' && APP.currentScreenName==='auditor'){
-      // Refresh the current auditor tab
-      if(APP.currentAuditorTab==='displayctrl'){
-        auditorTab('displayctrl',null);
-      }else if(APP.currentAuditorTab==='rankings'){
-        auditorTab('rankings',null);
-      }
-    }else if(APP.currentScreenName==='projector'){
-      // Refresh display/projector screen
-      renderProjector();
-    }
-  }, 2000); // Refresh every 2 seconds
+  setInterval(async function(){
+    if (!supabaseClient) return; // not connected yet — nothing to pull
+    await loadScoresFromSupabase();
+    await loadApprovalsFromSupabase();
+    await loadAppStateFromSupabase();
+    refreshCurrentScreen();
+  }, 5000); // safety-net refresh every 5 seconds
 }
 
 setupAutoRefresh();
