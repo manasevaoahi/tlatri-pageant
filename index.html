@@ -1049,9 +1049,6 @@ async function loadAppStateFromSupabase(){
     if (d.pdDays) { PD.days = d.pdDays; delete d.pdDays; }
     if (d.mcPin) { MC_PIN = d.mcPin; delete d.mcPin; }
     if (d.mcHint) { MC_HINT = d.mcHint; delete d.mcHint; }
-    // NEVER let Supabase overwrite contestant data — it always comes from code
-    delete d.contestantProfiles;
-    delete d.contestants;
     Object.assign(APP, d);
     console.log('✅ Setup data loaded from Supabase');
     injectContestantPhotos(); // Re-apply default photos after sync
@@ -1530,9 +1527,6 @@ function loadState(){
       console.log('✅ Parsed data from localStorage:', parsed);
       if(parsed.pdEvents){PD.events=parsed.pdEvents;}
       if(parsed.pdDays){PD.days=parsed.pdDays;}
-      // NEVER let saved state overwrite contestant data — it always comes from code
-      delete parsed.contestantProfiles;
-      delete parsed.contestants;
       Object.assign(APP,parsed);
       console.log('✅ APP.displayReleased after load:', APP.displayReleased);
       if(parsed.mcPin){MC_PIN=parsed.mcPin;}
