@@ -901,6 +901,8 @@ function cLabel(c){
 
 var ADMIN_PIN='1992', ADMIN_HINT='TLA';
 var APP={logoDataUrl:null,currentRole:null,currentJudge:null,currentAuditor:null,currentMC:null,currentEvent:null,currentContestant:null,pendingRole:null,contestants:{},judges:[],auditors:[],mcs:[],scores:{},unlockedScores:{},awards:[],offlineQueue:[],isOnline:true,testMode:true,dayTestMode:{},displayMode:'category',lockedEvents:{},activeJudgingEvent:null,displaySettings:null,resubRequests:{},mcPin:null,bgImages:{},contestantProfiles:{},roleProfiles:{judges:{},auditors:{},mc:{}},readyForMC:{},displayReleased:{},behaviouralScores:{},behaviouralSubmissions:{},sponsors:[],clearedResults:{},finalsVerified:false,finalsToHJ:false,hjReleasedToMC:{},finalsPublished:{},allScoresLocked:false};
+var _lastEditTime=0;
+function markUserEdited(){_lastEditTime=Date.now();}
 // Behavioural criteria (scored by assistant judges — deducted from contestant grand total)
 var BEHAVIOURAL_CRITERIA=[
   {name:'Professionalism & Respect',max:25,desc:'Rude, dismissive, or confrontational behaviour toward pageant officials, judges, or volunteers.'},
@@ -1052,8 +1054,14 @@ async function loadAppStateFromSupabase(){
     if (d.mcPin) { MC_PIN = d.mcPin; delete d.mcPin; }
     if (d.mcHint) { MC_HINT = d.mcHint; delete d.mcHint; }
     Object.assign(APP, d);
+    // Safety: ensure contestants are never empty after sync
+    if(!APP.contestants||!Object.keys(APP.contestants).length||PD.categories.some(function(cat){return !APP.contestants[cat]||!APP.contestants[cat].length;})){
+      console.log('⚠️ Contestants empty after sync — reinitializing from defaults');
+      APP.contestants={};
+      initDefaultContestants();
+    }
     console.log('✅ Setup data loaded from Supabase');
-    injectContestantPhotos(); // Re-apply default photos after sync
+    injectContestantPhotos(); // Re-apply default photos/bios/outfits after sync
     // Profiles re-injected from code defaults (only empty fields filled)
     // Re-sync event properties from code defaults
     Object.entries(PD_CODE_DEFAULTS||{}).forEach(function(e){
@@ -6160,8 +6168,7 @@ function renderHeadJudgeFullPanel(){
 // subscriptions set up in initSupabase(). This timer is just a safety net
 // in case a real-time message is ever missed (e.g. brief network hiccup).
 // Track when last user edit happened — skip refreshes for 3 seconds after any edit
-var _lastEditTime=0;
-function markUserEdited(){_lastEditTime=Date.now();}
+
 
 function setupAutoRefresh(){
   setInterval(async function(){
