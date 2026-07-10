@@ -1052,6 +1052,14 @@ async function loadAppStateFromSupabase(){
     Object.assign(APP, d);
     console.log('✅ Setup data loaded from Supabase');
     injectContestantPhotos(); // Re-apply default photos after sync
+    // Re-sync event properties from code defaults
+    Object.entries(PD_CODE_DEFAULTS||{}).forEach(function(e){
+      var evN=e[0],cd=e[1];
+      if(PD.events[evN]){
+        if(cd.allCats)PD.events[evN].allCats=cd.allCats;
+        if(cd.rankByCategory)PD.events[evN].rankByCategory=cd.rankByCategory;
+      }
+    });
   }
 }
 
@@ -1501,7 +1509,7 @@ function getTopN(evName,cat){
   return 4;
 }
 var PD_DAYS_DEFAULTS=JSON.parse(JSON.stringify(PD.days));
-var APP_DATA_VERSION=19; // Bump this number whenever you change default criteria in the code
+var APP_DATA_VERSION=20; // Bump this number whenever you change default criteria in the code
 
 
 
@@ -1728,6 +1736,37 @@ function loadState(){
           APP.contestantProfiles={};
           console.log('  ✅ v19: Profiles cleared for fresh injection');
         }
+        // VERSION 20: FULL WIPE — clean slate for live deployment
+        if(savedVer<20){
+          console.log('  🔄 v20: FULL DATA WIPE for live deployment...');
+          APP.scores={};
+          APP.unlockedScores={};
+          APP.lockedEvents={};
+          APP.readyForMC={};
+          APP.displayReleased={};
+          APP.hjReleasedToMC={};
+          APP.finalsVerified=false;
+          APP.finalsToHJ=false;
+          APP.finalsPublished={};
+          APP.allScoresLocked=false;
+          APP.behaviouralScores={};
+          APP.behaviouralSubmissions={};
+          APP.overallReadyForMC={};
+          APP.clearedResults={};
+          APP.resubRequests={};
+          APP.offlineQueue=[];
+          APP.contestantProfiles={};
+          APP.contestants={};
+          APP.awards=[];
+          APP.sponsors=[];
+          APP.displaySettings=null;
+          APP.displayMode='category';
+          initDefaultContestants();
+          syncHardcodedNames();
+          // Flag to wipe Supabase on next sync
+          APP._wipeSupabase=true;
+          console.log('  ✅ v20: All local data wiped. Supabase will be wiped on next sync.');
+        }
         // Save the upgraded version and sync to all devices
         APP._dataVersion=APP_DATA_VERSION;
         saveStateLocal();
@@ -1753,101 +1792,33 @@ injectContestantPhotos();
 
 
 
-  // ══════ INTERVIEW TOPICS AS OUTFITS ══════
-  if(!APP.contestantProfiles['KAT1'])APP.contestantProfiles['KAT1']={};
-  if(!APP.contestantProfiles['KAT1'].outfits)APP.contestantProfiles['KAT1'].outfits={};
-  APP.contestantProfiles['KAT1'].outfits['Interview']="Women and Climate Change: Strengthening Community Resilience in Tonga (Houʻeiki Fafine mo e feliuliuaki ʻa e ʻea fakamalohia ha komiuniti ʻoku faʻa matuʻuekina ʻi Tonga)";
-  if(!APP.contestantProfiles['KAT2'])APP.contestantProfiles['KAT2']={};
-  if(!APP.contestantProfiles['KAT2'].outfits)APP.contestantProfiles['KAT2'].outfits={};
-  APP.contestantProfiles['KAT2'].outfits['Interview']="Education for Girls and Climate Awareness in Tonga (Ako Maʻae Houʻeiki Fafine pea moe taukei ki he feliuliuaki ʻo e ʻea ʻi Tonga)";
-  if(!APP.contestantProfiles['KAT3'])APP.contestantProfiles['KAT3']={};
-  if(!APP.contestantProfiles['KAT3'].outfits)APP.contestantProfiles['KAT3'].outfits={};
-  APP.contestantProfiles['KAT3'].outfits['Interview']="The Role of Women in Sustainable Farming and Food Security (Fatongia ʻo haʻa Fafine ʻi he ngaahi founga ngoue tuʻuloa mo e malu fakameʻatokoni)";
-  if(!APP.contestantProfiles['KAT4'])APP.contestantProfiles['KAT4']={};
-  if(!APP.contestantProfiles['KAT4'].outfits)APP.contestantProfiles['KAT4'].outfits={};
-  APP.contestantProfiles['KAT4'].outfits['Interview']="Water Scarcity and Sanitation Challenges in Rural Tonga (Ngaahi pole ʻo e hahamolofia/siʻisiʻi ha maʻuʻanga vai ʻoku maʻa he ngaahi tukui kolo)";
-  if(!APP.contestantProfiles['KAT5'])APP.contestantProfiles['KAT5']={};
-  if(!APP.contestantProfiles['KAT5'].outfits)APP.contestantProfiles['KAT5'].outfits={};
-  APP.contestantProfiles['KAT5'].outfits['Interview']="Climate Change and Its Impact on Maternal and Family Health (Feliuliuaki ʻa e ʻea pea mo hono ngaahi uesia ʻi he moʻui lelei ʻa e famili mo haʻa Fafine)";
-  if(!APP.contestantProfiles['GLA1'])APP.contestantProfiles['GLA1']={};
-  if(!APP.contestantProfiles['GLA1'].outfits)APP.contestantProfiles['GLA1'].outfits={};
-  APP.contestantProfiles['GLA1'].outfits['Interview']="The Role of Men in Supporting Climate Resilience in Families and Villages (Fatongia ʻo e Houʻeiki Tangata hono poupoua e ngaahi famili mo e ngaahi kolo ke matuʻuaki e feliuliuaki ʻa e ʻAe)";
-  if(!APP.contestantProfiles['GLA2'])APP.contestantProfiles['GLA2']={};
-  if(!APP.contestantProfiles['GLA2'].outfits)APP.contestantProfiles['GLA2'].outfits={};
-  APP.contestantProfiles['GLA2'].outfits['Interview']="Climate Change and Its Effects on Fisheries and Ocean Livelihoods (Feliuliuaki ʻa e ʻAe mo hono ngaahi uesia he Toutai pea mo e maʻuʻanga moʻui mei ʻoseni)";
-  if(!APP.contestantProfiles['GLA3'])APP.contestantProfiles['GLA3']={};
-  if(!APP.contestantProfiles['GLA3'].outfits)APP.contestantProfiles['GLA3'].outfits={};
-  APP.contestantProfiles['GLA3'].outfits['Interview']="Climate Change and Youth Leadership in Disaster Preparedness in Tonga (Feliuliuaki ʻa e ʻAe pea mo e Taaimuʻa ha Taki Toʻutupu he tokateu ki ha fakatamaki ʻi Tonga)";
-  if(!APP.contestantProfiles['GLA4'])APP.contestantProfiles['GLA4']={};
-  if(!APP.contestantProfiles['GLA4'].outfits)APP.contestantProfiles['GLA4'].outfits={};
-  APP.contestantProfiles['GLA4'].outfits['Interview']="Waste Management and Plastic Pollution: A Growing Environmental Crisis (Mapuleʻi ʻo e Veve mo e Fakaveve Pelesitiki: Ko ha palopalema faka-ʻatakai ʻoku fakautuutu)";
-  if(!APP.contestantProfiles['GLA5'])APP.contestantProfiles['GLA5']={};
-  if(!APP.contestantProfiles['GLA5'].outfits)APP.contestantProfiles['GLA5'].outfits={};
-  APP.contestantProfiles['GLA5'].outfits['Interview']="Food Security in Tonga: Climate Change and the Future of Agriculture (Malu faka-Meʻatokoni ʻi Tonga: Feliuliuaki ʻo e ʻAe pea mo e Kahaʻu ʻo e Ngoue)";
-  if(!APP.contestantProfiles['GLA6'])APP.contestantProfiles['GLA6']={};
-  if(!APP.contestantProfiles['GLA6'].outfits)APP.contestantProfiles['GLA6'].outfits={};
-  APP.contestantProfiles['GLA6'].outfits['Interview']="The Impact of Rising Sea Levels on Coastal Communities and Housing (Uesia ʻo e fakautuutu e maʻolunga ange ʻa e levolo ʻo e tahi he ngaahi kolo he matafanga pea mo e fale)";
-  if(!APP.contestantProfiles['GLA7'])APP.contestantProfiles['GLA7']={};
-  if(!APP.contestantProfiles['GLA7'].outfits)APP.contestantProfiles['GLA7'].outfits={};
-  APP.contestantProfiles['GLA7'].outfits['Interview']="Renewable Energy Solutions for a Sustainable Tonga (Ngaahi solovaʻanga faka-maʻuʻanga ivi fakaenatula ki ha Tonga tuʻuloa)";
-  if(!APP.contestantProfiles['GLA8'])APP.contestantProfiles['GLA8']={};
-  if(!APP.contestantProfiles['GLA8'].outfits)APP.contestantProfiles['GLA8'].outfits={};
-  APP.contestantProfiles['GLA8'].outfits['Interview']="Migration and Urban Drift: Climate Change and Youth Relocation (Hikifonua pea mo e hiki mei he ngaahi kolo ʻi ʻuta ki kolo: Feliuliuaki ʻa e ʻAe pea mo e fehikitaki ʻa e Toʻutupu)";
-  if(!APP.contestantProfiles['GAL1'])APP.contestantProfiles['GAL1']={};
-  if(!APP.contestantProfiles['GAL1'].outfits)APP.contestantProfiles['GAL1'].outfits={};
-  APP.contestantProfiles['GAL1'].outfits['Interview']="Climate-Induced Displacement and Identity Challenges (Ngaahi pole fehangahangai mo hoto kita, fakalotoa ai ke ʻunu/hiki mei hoto nofoʻanga makatuʻunga he feliuliuaki ʻa e ʻAe)";
-  if(!APP.contestantProfiles['GAL2'])APP.contestantProfiles['GAL2']={};
-  if(!APP.contestantProfiles['GAL2'].outfits)APP.contestantProfiles['GAL2'].outfits={};
-  APP.contestantProfiles['GAL2'].outfits['Interview']="Mental Health Impacts of Climate Change on Marginalized Communities (Nunuʻa Tamaki ʻo e Feliuliuaki ʻa e ʻAe he Fokoutua Fakaʻatamai ʻa e Ngaahi Komiuniti ʻoku fakatukutukukeheʻi)";
-  if(!APP.contestantProfiles['GAL4'])APP.contestantProfiles['GAL4']={};
-  if(!APP.contestantProfiles['GAL4'].outfits)APP.contestantProfiles['GAL4'].outfits={};
-  APP.contestantProfiles['GAL4'].outfits['Interview']="Inclusive Disaster Response: Ensuring No One is Left Behind (Tokoni fakavavevave ʻi ha fakatamaki ʻoku fakalukufua/kau katoa: Fakapapauʻi ʻoku ʻikai liʻekina ha taha)";
-  if(!APP.contestantProfiles['GAL5'])APP.contestantProfiles['GAL5']={};
-  if(!APP.contestantProfiles['GAL5'].outfits)APP.contestantProfiles['GAL5'].outfits={};
-  APP.contestantProfiles['GAL5'].outfits['Interview']="Advocacy and Representation: Amplifying Trans Voices in Climate Action (Fakaleʻolahi e ngaahi leʻo ʻo e kau Leiti he ngaahi ngaue felaveʻi mo e feliuliuaki ʻa e ʻAe)";
-  if(!APP.contestantProfiles['GAL6'])APP.contestantProfiles['GAL6']={};
-  if(!APP.contestantProfiles['GAL6'].outfits)APP.contestantProfiles['GAL6'].outfits={};
-  APP.contestantProfiles['GAL6'].outfits['Interview']="Building Safe and Inclusive Spaces During Climate Crises (Langa ha ngaahi feituʻu malu fakalukufua/kau katoa)";
-
-  // ══════ CONTESTANT BIOS ══════
-  if(!APP.contestantProfiles['GAL1'])APP.contestantProfiles['GAL1']={};
-  APP.contestantProfiles['GAL1'].bio='Kilia Kaha, 32, from New South Wales, Australia, representing Lady Down Under, is an accomplished Tongan and Māori artist, performer, and model with expertise in voguing, hip hop choreography, lip-sync acting, singing, and rapping. A respected leader in Australia’s ballroom scene since 2017, she has dedicated herself to creating safe, empowering spaces through dance workshops, queer history education, and community events for the LGBTIQ+ community. As Miss Galaxy ambassador, she aims to champion visibility, support, and empowerment for the Tongan Leiti community both in Tonga and across the diaspora while advancing the “Guardians of the Earth” theme through climate change advocacy, education, and collaboration.';
-  if(!APP.contestantProfiles['GAL2'])APP.contestantProfiles['GAL2']={};
-  APP.contestantProfiles['GAL2'].bio='Penina Paea Williams, 34, from Neiafu, Hunga Vava’u, and currently based in Auckland, New Zealand, representing Tonga Leitis Association- New Zealand, is a farm worker with a passion for hard work, sports, modeling, entertainment, and dance and lip-sync performance. Through volunteer work in community clean-ups, youth programs, and environmental awareness initiatives, she has strengthened her leadership skills and deepened her commitment to service. Competing in the Tri Pageant 2026 under the “Guardians of the Earth” theme, Penina aims to inspire the young LGBTIQ+ community by promoting environmental protection, supporting climate action, and encouraging sustainable living practices.';
-  if(!APP.contestantProfiles['GAL4'])APP.contestantProfiles['GAL4']={};
-  APP.contestantProfiles['GAL4'].bio='Jenny Tuitupou, 21, from Talafoʻou, Tongatapu, representing Miss Ella Artistic Emporium, is an active member of the Tonga Leitis Association and dedicated youth volunteer deeply committed to community service and advocacy. Aligned with the “Guardians of the Earth” theme, she is inspired to stand up for environmental protection and raise awareness about climate change’s impacts on Tonga. Through her platform at Tri Pageant 2026, Jenny aims to amplify important conversations around climate change and gender issues while encouraging her community to take meaningful action toward a more sustainable and inclusive future.';
-  if(!APP.contestantProfiles['GAL5'])APP.contestantProfiles['GAL5']={};
-  APP.contestantProfiles['GAL5'].bio='Dinah Jane Rexy, 26, from Halaovave, representing Federal Pacific Insurance, currently works for Treasure Islands Tonga with a strong passion for entertaining and supporting her community. Recognizing the growing impacts of climate change on Tonga’s environment and people’s mental well-being, she is using her Tri Pageant 2026 platform to advance the “Guardians of the Earth” theme by raising awareness about climate action and resilience. As a representative of a long-time diamond sponsor, Dinah aims to educate the community on the critical role of insurance in providing financial protection and support during natural disasters.';
-  if(!APP.contestantProfiles['GAL6'])APP.contestantProfiles['GAL6']={};
-  APP.contestantProfiles['GAL6'].bio='Lady Egypt Gaga, 40, from Haveluloto Bulldog, representing Jowella Company, works as a receptionist at the Tonga Leitis Association Office with a deep passion for entertaining others and bringing joy to those around her. Inspired by the “Guardians of the Earth” theme and events such as the Hunga Tonga-Hunga Ha’apai eruption, she believes these are urgent reminders of humanity’s responsibility in addressing climate change. Determined to make history as the first Miss Galaxy winner in Tri Pageant 2026’s new era, she is committed to delivering powerful environmental messages that connect with and mobilize the public.';
-  if(!APP.contestantProfiles['KAT1'])APP.contestantProfiles['KAT1']={};
-  APP.contestantProfiles['KAT1'].bio='Lea Ruso Tonga Ramsay, 20, from Haveluloto, Tongatapu, representing Miss Jowella Company, is pursuing a Bachelor of Law at the University of the South Pacific (Tonga Campus) with a strong passion for public speaking and advocacy. Having volunteered with the Tonga Red Cross Society and participated in Camp Glow Youth Camp, she has been recognized for her self-empowerment, strength, and unity as an emerging young leader. Aligned with the “Guardians of the Earth” theme, Lea believes in using her voice to educate and advocate for climate change awareness and action in Tonga.';
-  if(!APP.contestantProfiles['KAT2'])APP.contestantProfiles['KAT2']={};
-  APP.contestantProfiles['KAT2'].bio='Sela Tapu’osi Mafi, 24, originally from Masilamea, Vava’u and Tongoleleka, Ha’apai, now residing in Longolongo, Tongatapu, representing RA Ethereal Australia, works as a Technical Officer at Tonga Communications Corporation and is a personal fitness trainer who runs her own women’s empowerment program, SHEfit. Aligned with the “Guardians of the Earth” theme, she believes personal health and fitness are vital to environmental protection. Through SHEfit and her platform at Tri Pageant 2026, Sela empowers women to prioritize their wellbeing while promoting the interconnection between healthy living and environmental stewardship across Tonga.';
-  if(!APP.contestantProfiles['KAT3'])APP.contestantProfiles['KAT3']={};
-  APP.contestantProfiles['KAT3'].bio='Halatono Nicolette Ashley Faka’osi, 20, from Lapaha, Ngele’ia (Tongatapu), Falevai, and Neiafu (Vava’u), representing Kaha’u Melie Services, is pursuing a Bachelor of Arts in History and Geography at the University of the South Pacific (Tonga Campus) while working as a Customer Care Agent at Digicel, Tonga. As a Tonga High School alumna competing in Tonga’s inaugural TRI Pageant, she sees this platform as an opportunity to strengthen her self-confidence and become a role model for other women. Embracing the “Guardians of the Earth” theme, she is committed to raising awareness about climate change and global warming.';
-  if(!APP.contestantProfiles['KAT4'])APP.contestantProfiles['KAT4']={};
-  APP.contestantProfiles['KAT4'].bio='Malia ’Epifania Peei, 22, from Houma-’Eua, ’Esia-Niuafo’ou, and Ma’ufanga-Tongatapu, representing Joleenz HTP, is a Customer Service Representative at Petani Quarry with strong communication and interpersonal skills. Passionate about building confidence and creating meaningful connections through socializing, dancing, and community engagement, she is committed to using the Tri Pageant 2026 platform to inspire young people and advocate for positive environmental change. Aligned with the “Guardians of the Earth” theme, Malia is dedicated to raising awareness about climate change and environmental responsibility.';
-  if(!APP.contestantProfiles['KAT5'])APP.contestantProfiles['KAT5']={};
-  APP.contestantProfiles['KAT5'].bio='Malia Soana Taake Kavai, 25, from Leimatuʻa (Vavaʻu) and Hofoa (Tongatapu), representing Miss Ella Artistic Emporium, is in her final year at the University of the South Pacific pursuing a Bachelor in Media & Journalism with a strong passion for storytelling, media, and singing. Having covered stories on climate change’s impact on Pacific Island communities, she is committed to ensuring these voices are heard, protected, and acted upon. Through her platform at Tri Pageant 2026, Malia aims to inspire young women to advocate for social challenges affecting Tonga and the Pacific.';
-  if(!APP.contestantProfiles['GLA1'])APP.contestantProfiles['GLA1']={};
-  APP.contestantProfiles['GLA1'].bio='Andrew Palu, 26, from Kameli, Falaleu, Neiafu-Vava’u, and currently based in Tongatapu, representing Mister Ella Artistic Emporium, is a dedicated rugby player actively involved in community volunteering. Aligned with the “Guardians of the Earth” theme, he views community work as a powerful platform to connect with people, raise climate awareness, and educate communities about climate change issues. Through his participation in Tri Pageant 2026, Andrew aims to build personal confidence and strengthen his ability to create meaningful opportunities supporting volunteer initiatives.';
-  if(!APP.contestantProfiles['GLA2'])APP.contestantProfiles['GLA2']={};
-  APP.contestantProfiles['GLA2'].bio='Maile Niu Tupou, 21, from Paini Tu’u Ua, representing Ha’apai Delight, is an Electrical Engineering graduate from Tonga National University who currently works as a fitness and gym trainer and professional electrician. Passionate about fitness, bodybuilding, rugby, boxing, and cooking, he is stepping into pageantry for the first time through the Mister Gladiator category at Tonga’s inaugural Tri Pageant. Aligned with the “Guardians of the Earth” theme, Maile is eager to deepen his understanding of climate change and leverage his platform to educate and inspire his community to take action on environmental issues.';
-  if(!APP.contestantProfiles['GLA3'])APP.contestantProfiles['GLA3']={};
-  APP.contestantProfiles['GLA3'].bio='English Hansen Joshua All Saints Ngu Kupu, 23, representing Mister RA Ethereal Australia from Vava’u and Tongatapu, is a student at Tonga National University’s Maritime School and serves in His Majesty’s Armed Forces. With a deep passion for marine life shaped by growing up near the ocean, he is committed to using his platform at Tri Pageant 2026 to advance the “Guardians of the Earth” theme by raising awareness about climate change, promoting environmental protection and climate resilience, and empowering young Tongans to address social issues affecting their communities.';
-  if(!APP.contestantProfiles['GLA4'])APP.contestantProfiles['GLA4']={};
-  APP.contestantProfiles['GLA4'].bio='Penisoni Tuifua Maile, 26, from Kahoua & Haveluloto-Tongatapu, representing House of Disha Style, is a personal fitness trainer passionate about fitness, weightlifting, and maintaining a healthy lifestyle. Competing in Tri Pageant 2026, he sees the “Guardians of the Earth” theme as a valuable opportunity to strengthen his confidence, develop his skills, and expand his platform while learning more about important community issues, including climate change. Through the pageant, Penisoni aims to share his knowledge and expertise while inspiring positive change.';
-  if(!APP.contestantProfiles['GLA5'])APP.contestantProfiles['GLA5']={};
-  APP.contestantProfiles['GLA5'].bio='Ngatu E Hau Rodriques Lui, 18, from ’Utulangivaka (Vava’u), Vaini (Tongatapu), and Auckland, New Zealand, representing Mister Jowella Company, is a first-year student at Auckland University of Technology pursuing a Bachelor of Architecture and Future Environments. With a strong passion for sustainability and community service, he actively participates in tree planting initiatives and serves as a dedicated member of the Vinnies Organization. Aligned with the “Guardians of the Earth” theme, Ngatu believes this platform empowers young men to take meaningful action toward creating an ecologically sustainable and culturally rich future for Tonga.';
-  if(!APP.contestantProfiles['GLA6'])APP.contestantProfiles['GLA6']={};
-  APP.contestantProfiles['GLA6'].bio='Falisi John Uhatafe, 24, from Lapaha, Kolomotu’a, representing Alpha Car Rentals, is a Flight Attendant for American Airlines with expertise in customer service, passenger safety, inflight hospitality, and emergency response. Drawing parallels between safeguarding passengers and protecting the environment, he is passionate about becoming a guardian for the Earth by advocating for climate justice. Through his exceptional communication skills and dedication to teamwork, Falisi aims to use his Tri Pageant 2026 platform to inspire positive change, promote inclusivity, and amplify youth voices in climate change advocacy.';
-  if(!APP.contestantProfiles['GLA7'])APP.contestantProfiles['GLA7']={};
-  APP.contestantProfiles['GLA7'].bio='Katieli Tuipulotu Mahe, 30, from Fangale’ounga, Koulo, Ha’apai, representing the Tonga National Men’s Netball Team, is a Computer Programmer at the Tonga Statistics Department with a Bachelor of Science in Mathematics and Information Systems from the University of the South Pacific. Having witnessed the impacts of climate change in Ha’apai, he embraces the “Guardians of the Earth” theme by advocating for environmental protection, sustainable living, and informed community action. Through his platform at Tri Pageant 2026, Katieli aims to raise awareness about climate resilience while growing in confidence and leadership.';
-  if(!APP.contestantProfiles['GLA8'])APP.contestantProfiles['GLA8']={};
-  APP.contestantProfiles['GLA8'].bio='Samuela Kata Ta’ofi, 23, rooted in Silapeluua, representing Echoes of Tonga Tour, is a fitness and gym trainer at Fisi’i Saafa Gym and recognized title holder in Tonga’s bodybuilding scene. Passionate about bodybuilding, connecting with people, music, and karaoke, he is committed to using his platform at Tri Pageant 2026 to strengthen his confidence while developing his skills and capacity. Having personally witnessed climate change’s impacts on Tonga’s environment and nation, Samuela embraces the “Guardians of the Earth” theme and is dedicated to raising awareness and educating communities about climate action.';
-
 saveStateLocal(); // Persist photos to localStorage
+queueAppStateSync(); // Push updated profiles to Supabase so cloud data stays current
+// Wipe Supabase if flagged by migration
+(async function(){
+  if(!APP._wipeSupabase) return;
+  if(!supabaseClient) return;
+  try{
+    console.log('🗑️ Wiping Supabase tables...');
+    // Clear scores table
+    await supabaseClient.from('scores').delete().neq('event_id','');
+    console.log('  ✅ scores table cleared');
+    // Clear approvals table
+    await supabaseClient.from('approvals').delete().neq('event_id','');
+    console.log('  ✅ approvals table cleared');
+    // Clear app_state table
+    await supabaseClient.from('app_state').delete().eq('id',1);
+    console.log('  ✅ app_state table cleared');
+    // Remove the flag
+    delete APP._wipeSupabase;
+    // Push fresh state to Supabase
+    saveStateLocal();
+    queueAppStateSync();
+    console.log('  ✅ Fresh state pushed to Supabase');
+  }catch(e){
+    console.error('Supabase wipe error:',e);
+  }
+})();
 // Generate random test scores for testing
 // Test scores disabled - app reset for live testing
 
@@ -4180,6 +4151,62 @@ function injectContestantPhotos(){
   APP.contestantProfiles['GAL5'].photo='data:image/jpeg;base64,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';
   if(!APP.contestantProfiles['GAL6'])APP.contestantProfiles['GAL6']={};
   APP.contestantProfiles['GAL6'].photo='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCACNAMgDASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAAAgMAAQQFBv/EADYQAAICAQMCBQMCBQQBBQAAAAECAxEABBIhMUEFEyJRYTJxgRSxBiNCkaFSwdHwshUkU1Th/8QAGQEAAwEBAQAAAAAAAAAAAAAAAAECAwQF/8QAIhEAAgICAQQDAQAAAAAAAAAAAAECEQMhEhMiMUEEUWEy/9oADAMBAAIRAxEAPwDxKrcjg9O+AV9e0G8uyWbb1Y5ZZUG1R6j1N53kEJCelTz3OBle1ZMAL+PfGLGWUV3xa9caslXuJPtgBI2Ik2k32y5UJO4DAYgmwKPzksnqTgIaJKFHn7YO5nI2qMFQWNZoiQyMIo6FnlvbE6W2AJAHCsOfqPTCUIylENjvklCRdT6VJvdmX9RONzLHRbpQ6DOOedy/k2jBLyakjpgAq17E5YRHlprSu1Zjgd1NyNKW7UB6f75rjneBypYsrA+sDscy5zXhl8Yv0AYmDuDyLsMMSQ27bd50l8qZQTY3UBQ4JzJOggak5sdTnVhz8tPyZTx1tC93lih9R6n2wQTgjnnLBrnOkyJhhGoFe+DV8DGrJXXivjACRswYgtkkU7tw/vgMRutRkLMepwAYJaHqFHK3BmG1RfviwCx4wzSDaOvc4AFVelfqPU5MVz1GTCgALBBtQ89zg9TwKxixoTwd2U6FOQTX7YigNjVZHGHGqnqDYw4zuTnA9aXxXzgBHUr9j0wO+E7FqvKHAvnARBhICTQyKpY8Drhmk9C9e5wAskKNqdT1OdBYjpVRZEUKfU7H9sV4XpmllMpS44xZv37YfiEgCLIb2CwKFm+ucfycm+CN8UdcjnaiQy6hdvqW+KHc56zwbw6JUAItj1J6nPK+HC52kYAKoLc9uc9RpNeNKyvHPDqF7xlhf+Omck78I6Mf2zoa/wAF08sBKqFeuGHXPIazSSaYPE4AU8qR7/8AGe08R8ZWOGL9PDGfMHLM3C/855nxbU6WSE7dSJZ7sKDuF+1ZMbLmkYNLMySLH02g1zXz+ccUGoRzxwLuiMxApqgVK/zh/oA6fOPhlVVVbNsADR7cZdtO0Y1ejM0TRsQwog9cJEDdT+BmzURqYUZW3GqJzECy2a69bz08c+cbOSceLotgV/PTANYTNvI7UMqs0RJVZYBJoXeQKSaxh9A2r17nACiQopevc5QYLtIH3yvxhNe1bH2woQ1SCLFZMQL57A5MKAQOt9CMfe6Pj2yiqN35+DkJ8sgDnviKAVmQdMYsga7HbLVw1+/ti3Wm474ADzfOWqljQyKpJoYZIUbV/JwAuwBtXt1OEiA7RtstxeUCPLofkZr0SB2DMCQq5M5cYthFcnR0pQumjigQkJQY1/UeucnxCXaDB6iRyR2/GdOaURRmWUbgTSqv9Pz++cbVy+aSzC3dqH/e2eUm27Z2vSpGv+HyDqnSSmBWunbPSp4DoIIvOESFQOBnkPCpDHrtorcRx81nsTqWk0giEgjc9Ce2TO09GuKnHY2bSQtDpYpoh5ZBrj3OVqPBdJp1M3lpv5o174DQ61Y43k1kWxRtFKDuGDr9b5mnIiNgcdcz2jR0zxs1QaqTYONxA4xwVpY0lRUaTkMF4oYrUbZpXjX6wSeBdnBgl3gRpIVZuvHGb+jm9m9W9LIUKgi6/wB8ylh6lPbGlni2gqNwFX8DjF6lVEg2k0VHXOj4su7iY5lqxB68DIASaGWFJ463hk7fSvXuc7zmJ9KkL17nKKgKDzZGEa8vj85bD0L74AB6ewPzhWKJXt0vIU281lcbD79sYit1A8DnJkAPbJjASRscYyRdw46jKkW+QRgrIVq+cgsoWrXWE9u9Dtxk3MxoUMskAhR36nACdiEPTqcgIXqhv5w6CoQPbAQ0QBZvqMBBBg3IQj7Z0dAWhjdgHv4Xt+c54a3A6D2zpw+Q8ZEbFmQi9/A/Azn+U+yjXCu4RM7GEIKZnWzXPPtnPkekSPdbE2WI+n7HNpMn6nbyFC8ge3xmN5FkmtbCoeCRZzgidMjPHKYpFkQ7nUhgarPXaKSDxHSLG6oxuxuHTPKmmXc1ncTwO2a9I0sFSQmr6jHNWGN0z1z+E7ogH08AQdwM5fjOsi0unEce1QopVUdcQ/jGreHZecTViWaW5CS2Qlb2aynoCN5BUgpXFm/fDcRkl442Q1uIvKkANgm28vgYUbyfpWlKK9UDwbI9j8cZozBGmGWgX32eytyThamMEKykknreYXrfHNCu1braDYrNha0CIaPXNMKayKicj7XYsCvSvJ7nJ6F6gnGFaQj4xamqB5GekchdqeADeXTGgCLGWDb7QKAyAAsw98BE2v3Iwa6rwScnN7bvC+ngUWxgUfRY/q7/ABkysmMKMh6nuBlqLNDIiFzxjCNopT9zklldBtQc9zlBWP8ATkBNDtz1xqNuFngjEAAJ2kMD0wkCqL3C8EsS4HQA50vC/DV1moMkxK6aLmQjv7KPk4pSUVbBJt0i9B4XLrQJj/LhB+s9/gDvm2XSRxgrClhRwW5JzrgiQCgEjUUiLwFHtmfxFhHp/wCXtBJonrQzy8uaWR16O+GKMFfs8vJq44SSFJeuDf8AjM8bEyiUgANyFJoMfvjNVC889bVJv7YMahNWXbtxzyLwUdGbewUlO1d7FSCbUDpnc8O0Bl0iSKDRHfOQkYaVNgvdwo/3z2ngrxyeHhVWtjFa65OTRpiVs5X/AKaeu3jOf4jpGi5quRzWezEIJ5Gc7x6Efo7QKGBu67ZnGTs1lFUeJkA88liOp23k027lzYvilJF/f4yzGxnAA6cUT1xmniLO+3dR42++dCRyti9PUbMnnEDmrNLm5InmjG0KWHQjECBi5Ea3Xt2zr+GxUwUrTnn7YpNwfJFRSkqZy2DAMjqQfnKVQACavPQ6vRJMlEUw6H2zgz6d4pCrLRGehhzLIv05cuJ43+AlRuDDF8hjXJOXtJPAvGbNgIHU5tRiL+gcdT3yuuEVybSeax0ANcZMasYbv+MmMDKpUDav5OMCAjkcYTIFQEC/nDiWxbADJSLEtEdgPzxjdBo21esig3BPMat7AkDi7NZpSMH49sYiFWtSQR3HGPiKx2h/h39Zom1sOvi8hJBGxaJwQSL6e2d6PwtUglgg1KCDSRrKzFDb7gOfvz0xfh4K/wAI6kdP/ep/45r8I2nQeKeYzBf06gkCyBuzmywctPwa45KOxDadk0n6mORZYQ2xmUEFT8g4nxXTnSiBZJFczxiVaB4U9OubNQVg8CA0pZ4tTL/NkcUQy8ha/wA3eI/iNx5/hYPfQRn98yeFJGnVbZxJ9LuBIHAFntioNGJpwqqfkn3z0uhh0k2mdZC+7aSKA5Njg/GLj0scUpMYIJFGxWEcdClO2cnVeALopYG1GuiRdRFvX+W1BTxya4z0HhOjn0kDabVxhJInICjuO33++bPEtLBqI9AJ5FRTpQCCpJqzjv1Cza9powESJBQZgOgpb/NZhkxtm2OdBaqA6ZzHIBuoHjOH43ojLo45ZphDExO07SzMfgDt8nO34izy+Fwz7lZ4iYnKsDx1U8Zk8eUSR6VB9B0qbT/e8UMOwll1R42Xw4rAk8eojlR5ChIUhlIAJtT065o1XgQ0OqfSajWxLINu5ljcgbhY/cZ1F8JePQnVO6vEW28E2Wr2+2b/AB+DSyePuNQZgCI921Rt+kd7vOh4zHmeb0+kMWrfT1uaOQpY/rINcZ09XoW8P18kMoHmIQbB4NjJoYSmolnOxWhTcNzBRuPC9fk3+M3eIq2o8J0OtLI8kY/TTFGDcj6SSPjH097BZPoGfQSp4fHrVdZInNGuqe1jMLeGrro4mEyI7SeWLU8cXz8VnT0mtXSvp01A3aWfTBJl+Nzc/cYvxLRyeHweXutfPLRyD+tSgojKx4+MtCnNyVM40fg8Z0D61NZH5KSCNj5TXZFjjM+q0A08uzzFlBVWDKCAQQD3++dqFQP4V1Vf/cT/AMc5EpPyaGdsU9nMznyRlG4y1UMORmhl3ckYJHNDHQjOVC9Bkx9WMmFAJMClaBP2wliBFDtjigA44xsUNcnGkOwFjIWgMgWjyM0qtcZNmVQrNem1aJ4W+i8klXlEpbzObAr26Y3SawabTamExb/1CBGO6qF3xxmFRQ46ZfXM+mrK5aNa68L4c+ieEOpl81G3VtO3b+f+cX4hql8QOmuLyzBCsIp7sDoenXEbcgWjldNeSeTNULkLQPGa0msC/UP2znA1jo3oG8iWNFKR2tROupijpNvkxhAQ12P7YhCP07RhfUzBi19auuPzmOOUr0PH+2M84gV1GYSx+jSMjZHqvJgnhePckwAI3VVcgjAbVI2kSDUJ5gQnYQ20qD8+2Y2lVm9gOl9sVI9n3wx4kEpm2bU74Y4FTZAhLbA1lie5P/5l6/XwavUNNJpm3MADtlroK9s53mEA3zi2a83WJWZ8jVqJH1qyiGDaZJwzevueFHTp1/vhaRp9Pop9I2n8xNSQb3/SQLBHHWsxxzSREmNtpPXL/US82w5q+BzXTH0/XoXIbM3mxwlU2hF8sW97qPbj5x08mrm0um0Eig+U7iPnn5GZBqJRZ38kkk179cI6qY0d/K9DXI6d/wADDptD5GiORh4U+k8i0kZZy3m88cXVdPfOWVvrmkzykUWFUw6DgHriqzSMaIbFsgA6YopfbnNJGA4xtCMjDYMmOdN3BGTJoYQi9WMUUMpCTzh5SAlZdZMvGIrJl5MADSB208s/AjhFsx/b74OmQ6qSNISCZDS2aGKnjeaIxCaREJ9SqeG+4x+hZdHNA6qWWJgavk5inl6jVdvo6HHD0U0++9r8JHE8iyMgsRrub4F1/vjhppAAdycorn1dFPQn45x2gamXyIwyhgsgci2DWvtwOf8AOGyyFKjS2aBYLLXxQPt1I7ZTk7oxRmeKSGXy5KD7ilfINYxoHV3BZP5dhyDwtGv3y5RJqZItRQr0RizyWXj/ADWaJfMkaXcp26gsfquqO4Vx9/veRIpGV4JNnmbkK7iCQeBQvn8YxdDMzhbjvcq/V3YWB/bJI5WHUoqKqypGAFPTng9Opo398Y88q68SuKWF0tN3BNADmu9dcWwMXlMzMFKkKu5mvgD/AKcEQSP5hTawjTexB7f9OaoIJV81QFZJP5TeqiDuHP4Nf3xiFoJFdIUKKtyLfLrtAPbqQx/6Mvl9E0YHgZFtyoJUPtJ5o9MqWGSFlWRaLKHH2PTNso2l5JolcrGqH1WKHAYcdwK/OZp9QZ4o1dRvQt6hxYJuq+9/3yotsTQjJkyZYiZMmTACsE84WGsRbd19Is0LrFKSj5GlYkjJjHQrXcHoR3yYLYhKHjGA4AFDDGMZeXlZeAiZMmTACZMmTAAkkeM3G5W/Y4Xny/6z2/x0xeTCgG+fLQAcivb39/v85BNIAAHbjpz8V+3GKyXi4odjv1E3/wAhwfNk/wBZ6AfgdMXeVZwpBY7z5gb81gfvg+dLu3b23e/4r9sXZyrOFBYwyORtLkiqq+13++DlZeMRMmTJgBMmTJgBaC3A980x6oxqwJBJFG15zJhlyfqAJ9yOcyyY1J7KjKi5pC45ax24qsmATfXJlwjxVCbs/9k=';
+  // ══════ INTERVIEW TOPICS (as outfit descriptions) ══════
+  if(!APP.contestantProfiles["KAT1"].outfits)APP.contestantProfiles["KAT1"].outfits={};
+  APP.contestantProfiles["KAT1"].outfits["Interview"]="Women and Climate Change: Strengthening Community Resilience in Tonga (Houʻeiki Fafine mo e feliuliuaki ʻa e ʻea fakamalohia ha komiuniti ʻoku faʻa matuʻuekina ʻi Tonga)";
+  if(!APP.contestantProfiles["KAT2"].outfits)APP.contestantProfiles["KAT2"].outfits={};
+  APP.contestantProfiles["KAT2"].outfits["Interview"]="Education for Girls and Climate Awareness in Tonga (Ako Maʻae Houʻeiki Fafine pea moe taukei ki he feliuliuaki ʻo e ʻea ʻi Tonga)";
+  if(!APP.contestantProfiles["KAT3"].outfits)APP.contestantProfiles["KAT3"].outfits={};
+  APP.contestantProfiles["KAT3"].outfits["Interview"]="The Role of Women in Sustainable Farming and Food Security (Fatongia ʻo haʻa Fafine ʻi he ngaahi founga ngoue tuʻuloa mo e malu fakameʻatokoni)";
+  if(!APP.contestantProfiles["KAT4"].outfits)APP.contestantProfiles["KAT4"].outfits={};
+  APP.contestantProfiles["KAT4"].outfits["Interview"]="Water Scarcity and Sanitation Challenges in Rural Tonga (Ngaahi pole ʻo e hahamolofia/siʻisiʻi ha maʻuʻanga vai ʻoku maʻa he ngaahi tukui kolo)";
+  if(!APP.contestantProfiles["KAT5"].outfits)APP.contestantProfiles["KAT5"].outfits={};
+  APP.contestantProfiles["KAT5"].outfits["Interview"]="Climate Change and Its Impact on Maternal and Family Health (Feliuliuaki ʻa e ʻea pea mo hono ngaahi uesia ʻi he moʻui lelei ʻa e famili mo haʻa Fafine)";
+  if(!APP.contestantProfiles["GLA1"].outfits)APP.contestantProfiles["GLA1"].outfits={};
+  APP.contestantProfiles["GLA1"].outfits["Interview"]="The Role of Men in Supporting Climate Resilience in Families and Villages (Fatongia ʻo e Houʻeiki Tangata hono poupoua e ngaahi famili mo e ngaahi kolo ke matuʻuaki e feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles["GLA2"].outfits)APP.contestantProfiles["GLA2"].outfits={};
+  APP.contestantProfiles["GLA2"].outfits["Interview"]="Climate Change and Its Effects on Fisheries and Ocean Livelihoods (Feliuliuaki ʻa e ʻAe mo hono ngaahi uesia he Toutai pea mo e maʻuʻanga moʻui mei ʻoseni)";
+  if(!APP.contestantProfiles["GLA3"].outfits)APP.contestantProfiles["GLA3"].outfits={};
+  APP.contestantProfiles["GLA3"].outfits["Interview"]="Climate Change and Youth Leadership in Disaster Preparedness in Tonga (Feliuliuaki ʻa e ʻAe pea mo e Taaimuʻa ha Taki Toʻutupu he tokateu ki ha fakatamaki ʻi Tonga)";
+  if(!APP.contestantProfiles["GLA4"].outfits)APP.contestantProfiles["GLA4"].outfits={};
+  APP.contestantProfiles["GLA4"].outfits["Interview"]="Waste Management and Plastic Pollution: A Growing Environmental Crisis (Mapuleʻi ʻo e Veve mo e Fakaveve Pelesitiki: Ko ha palopalema faka-ʻatakai ʻoku fakautuutu)";
+  if(!APP.contestantProfiles["GLA5"].outfits)APP.contestantProfiles["GLA5"].outfits={};
+  APP.contestantProfiles["GLA5"].outfits["Interview"]="Food Security in Tonga: Climate Change and the Future of Agriculture (Malu faka-Meʻatokoni ʻi Tonga: Feliuliuaki ʻo e ʻAe pea mo e Kahaʻu ʻo e Ngoue)";
+  if(!APP.contestantProfiles["GLA6"].outfits)APP.contestantProfiles["GLA6"].outfits={};
+  APP.contestantProfiles["GLA6"].outfits["Interview"]="The Impact of Rising Sea Levels on Coastal Communities and Housing (Uesia ʻo e fakautuutu e maʻolunga ange ʻa e levolo ʻo e tahi he ngaahi kolo he matafanga pea mo e fale)";
+  if(!APP.contestantProfiles["GLA7"].outfits)APP.contestantProfiles["GLA7"].outfits={};
+  APP.contestantProfiles["GLA7"].outfits["Interview"]="Renewable Energy Solutions for a Sustainable Tonga (Ngaahi solovaʻanga faka-maʻuʻanga ivi fakaenatula ki ha Tonga tuʻuloa)";
+  if(!APP.contestantProfiles["GLA8"].outfits)APP.contestantProfiles["GLA8"].outfits={};
+  APP.contestantProfiles["GLA8"].outfits["Interview"]="Migration and Urban Drift: Climate Change and Youth Relocation (Hikifonua pea mo e hiki mei he ngaahi kolo ʻi ʻuta ki kolo: Feliuliuaki ʻa e ʻAe pea mo e fehikitaki ʻa e Toʻutupu)";
+  if(!APP.contestantProfiles["GAL1"].outfits)APP.contestantProfiles["GAL1"].outfits={};
+  APP.contestantProfiles["GAL1"].outfits["Interview"]="Climate-Induced Displacement and Identity Challenges (Ngaahi pole fehangahangai mo hoto kita, fakalotoa ai ke ʻunu/hiki mei hoto nofoʻanga makatuʻunga he feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles["GAL2"].outfits)APP.contestantProfiles["GAL2"].outfits={};
+  APP.contestantProfiles["GAL2"].outfits["Interview"]="Mental Health Impacts of Climate Change on Marginalized Communities (Nunuʻa Tamaki ʻo e Feliuliuaki ʻa e ʻAe he Fokoutua Fakaʻatamai ʻa e Ngaahi Komiuniti ʻoku fakatukutukukeheʻi)";
+  if(!APP.contestantProfiles["GAL4"].outfits)APP.contestantProfiles["GAL4"].outfits={};
+  APP.contestantProfiles["GAL4"].outfits["Interview"]="Inclusive Disaster Response: Ensuring No One is Left Behind (Tokoni fakavavevave ʻi ha fakatamaki ʻoku fakalukufua/kau katoa: Fakapapauʻi ʻoku ʻikai liʻekina ha taha)";
+  if(!APP.contestantProfiles["GAL5"].outfits)APP.contestantProfiles["GAL5"].outfits={};
+  APP.contestantProfiles["GAL5"].outfits["Interview"]="Advocacy and Representation: Amplifying Trans Voices in Climate Action (Fakaleʻolahi e ngaahi leʻo ʻo e kau Leiti he ngaahi ngaue felaveʻi mo e feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles["GAL6"].outfits)APP.contestantProfiles["GAL6"].outfits={};
+  APP.contestantProfiles["GAL6"].outfits["Interview"]="Building Safe and Inclusive Spaces During Climate Crises (Langa ha ngaahi feituʻu malu fakalukufua/kau katoa)";
+  // ══════ CONTESTANT BIOS ══════
+  APP.contestantProfiles["GAL1"].bio="Kilia Kaha, 32, from New South Wales, Australia, representing Lady Down Under, is an accomplished Tongan and Māori artist, performer, and model with expertise in voguing, hip hop choreography, lip-sync acting, singing, and rapping.";
+  APP.contestantProfiles["GAL2"].bio="Penina Paea Williams, 34, from Neiafu, Hunga Vavaʻu, and currently based in Auckland, New Zealand, representing Tonga Leitis Association- New Zealand, is a farm worker with a passion for hard work, sports, modeling, entertainment, and dance.";
+  APP.contestantProfiles["GAL4"].bio="Jenny Tuitupou, 21, from Talafoʻou, Tongatapu, representing Miss Ella Artistic Emporium, is an active member of the Tonga Leitis Association and dedicated youth volunteer deeply committed to community service and advocacy.";
+  APP.contestantProfiles["GAL5"].bio="Dinah Jane Rexy, 26, from Halaovave, representing Federal Pacific Insurance, currently works for Treasure Islands Tonga with a strong passion for entertaining and supporting her community.";
+  APP.contestantProfiles["GAL6"].bio="Lady Egypt Gaga, 40, from Haveluloto Bulldog, representing Jowella Company, works as a receptionist at the Tonga Leitis Association Office with a deep passion for entertaining others.";
+  APP.contestantProfiles["KAT1"].bio="Lea Ruso Tonga Ramsay, 20, from Haveluloto, Tongatapu, representing Miss Jowella Company, is pursuing a Bachelor of Law at the University of the South Pacific with a strong passion for public speaking and advocacy.";
+  APP.contestantProfiles["KAT2"].bio="Sela Tapuʻosi Mafi, 24, originally from Masilamea, Vavaʻu and Tongoleleka, Haʻapai, representing RA Ethereal Australia, works as a Technical Officer at Tonga Communications Corporation and personal fitness trainer.";
+  APP.contestantProfiles["KAT3"].bio="Halatono Nicolette Ashley Fakaʻosi, 20, from Lapaha, Ngeleʻia (Tongatapu), representing Kahaʻu Melie Services, is pursuing a Bachelor of Arts in History and Geography at USP Tonga Campus.";
+  APP.contestantProfiles["KAT4"].bio="Malia ʻEpifania Peei, 22, from Houma-ʻAe, representing Joleenz HTP, is a Customer Service Representative at Petani Quarry with strong communication and interpersonal skills.";
+  APP.contestantProfiles["KAT5"].bio="Malia Soana Taake Kavai, 25, from Leimatuʻa (Vavaʻu) and Hofoa (Tongatapu), representing Miss Ella Artistic Emporium, is pursuing a Bachelor in Media & Journalism at USP.";
+  APP.contestantProfiles["GLA1"].bio="Andrew Palu, 26, from Kameli, Falaleu, Neiafu-Vavaʻu, representing Mister Ella Artistic Emporium, is a dedicated rugby player actively involved in community volunteering.";
+  APP.contestantProfiles["GLA2"].bio="Maile Niu Tupou, 21, representing Haʻapai Delight, is an Electrical Engineering graduate from Tonga National University who works as a fitness trainer and professional electrician.";
+  APP.contestantProfiles["GLA3"].bio="English Hansen Joshua All Saints Ngu Kupu, 23, representing Mister RA Ethereal Australia, is a student at Tonga National University Maritime School and serves in His Majestyʻs Armed Forces.";
+  APP.contestantProfiles["GLA4"].bio="Penisoni Tuifua Maile, 26, from Kahoua & Haveluloto-Tongatapu, representing House of Disha Style, is a personal fitness trainer passionate about fitness and weightlifting.";
+  APP.contestantProfiles["GLA5"].bio="Ngatu E Hau Rodriques Lui, 18, from ʻUtulangivaka (Vavaʻu), representing Mister Jowella Company, is a first-year student at AUT pursuing a Bachelor of Architecture and Future Environments.";
+  APP.contestantProfiles["GLA6"].bio="Falisi John Uhatafe, 24, from Lapaha, Kolomotuʻa, representing Alpha Car Rentals, is a Flight Attendant for American Airlines with expertise in customer service and emergency response.";
+  APP.contestantProfiles["GLA7"].bio="Katieli Tuipulotu Mahe, 30, from Fangaleʻounga, Koulo, Haʻapai, representing the Tonga National Menʻs Netball Team, is a Computer Programmer at the Tonga Statistics Department.";
+  APP.contestantProfiles["GLA8"].bio="Samuela Kata Taʻofi, 23, representing Echoes of Tonga Tour, is a fitness and gym trainer at Fisiʻi Saafa Gym and recognized title holder in Tongaʻs bodybuilding scene.";
 }
 
 var projTimer=null;
