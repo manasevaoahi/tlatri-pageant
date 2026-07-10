@@ -308,8 +308,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--text);m
 .crit-max{font-size:0.92rem;color:var(--crimson);font-weight:700;flex-shrink:0;}
 .crit-desc{font-size:0.78rem;color:var(--text2);margin-bottom:0.75rem;line-height:1.5;padding:0.4rem 0.65rem;background:rgba(45,106,53,0.06);border-radius:6px;border-left:3px solid var(--green);}
 .score-row{display:flex;align-items:center;gap:1rem;}
-.score-slider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--parch2);outline:none;cursor:pointer;}
-.score-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--crimson);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 5px rgba(196,30,58,0.4);}
+.score-slider{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--parch2);outline:none;cursor:pointer;touch-action:none;-ms-touch-action:none;}
+.score-slider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--crimson);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 5px rgba(196,30,58,0.4);}
+.score-slider::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--crimson);cursor:pointer;border:2px solid #fff;}
 .score-num{width:60px;text-align:center;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:0.48rem;font-size:1.15rem;font-weight:700;color:var(--text);font-family:'DM Sans',sans-serif;}
 .total-bar{background:var(--parch);border:1.5px solid var(--border);border-radius:var(--radius);padding:1rem;display:flex;justify-content:space-between;align-items:center;margin-top:1.4rem;}
 .total-label{font-size:0.95rem;color:var(--text2);font-weight:500;}
@@ -800,26 +801,25 @@ var PD = {
   categories:['Galaxy','Katinia','Gladiator'],
   days:{
     1:{name:'Float Parade',date:'2026-07-11',events:['Float Parade']},
-    2:{name:'Orientation',date:'2026-07-13',events:['Orientation']},
+    2:{name:'Interview',date:'2026-07-13',events:['Interview']},
     3:{name:'',date:'2026-07-14',events:['Galaxy Wear','Business Advertisement Talent','Island Creation']},
     4:{name:'',date:'2026-07-15',events:["Men's Tribal Floral Printed Attire",'Sarong & Sei','Talent Quest']},
     5:{name:'',date:'2026-07-16',events:['Advocacy Talent','Rainbow Wear','International Wear']}
   },
   events:{
     'Float Parade':{cat:'Galaxy',max:100,criteria:[
-      {name:'Theme Interpretation & Relevance',max:25,desc:'Float design clearly and purposefully conveys \'Our Ocean is Rising... And So Are We\', linking sea-level rise and resilience to a strong, urgent message.'},
-      {name:'Design Creativity & Originality',max:20,desc:'Originality of float decorations; bold, imaginative use of ocean-inspired colours, textures, and symbolism (waves, coral, rising tides, marine life).'},
-      {name:'Craftsmanship & Construction Quality',max:20,desc:'Decorations are sturdy, secure, and neatly finished for safe travel along the parade route.'},
-      {name:'Contestant\'s Presentation & Crowd Engagement',max:20,desc:'Contestant\'s presence, energy, and interaction with the crowd bring the float and theme to life along the route.'},
-      {name:'Overall Visual Impact & Impression',max:15,desc:'Float and contestant together create a powerful, cohesive, and memorable impression that reinforces the parade\'s message.'}
+      {name:'Theme Interpretation & Relevance',max:30,desc:'Float design clearly and purposefully conveys \'Our Ocean is Rising... And So Are We\', linking sea-level rise and resilience to a strong, urgent message.'},
+      {name:'Design Creativity, Originality & Craftsmanship',max:30,desc:'Originality and bold, imaginative use of ocean-inspired colours, textures, and symbolism (waves, coral, rising tides, marine life), combined with sturdy, secure, and neatly finished construction for safe travel along the parade route.'},
+      {name:'Contestant\'s Presentation & Crowd Engagement',max:30,desc:'Contestant\'s presence, energy, and interaction with the crowd bring the float and theme to life along the route.'},
+      {name:'Overall Visual Impact & Impression',max:10,desc:'Float and contestant together create a powerful, cohesive, and memorable impression that reinforces the parade\'s message.'}
     ],allCats:true},
-    'Orientation':{cat:'Galaxy',max:100,criteria:[
+    'Interview':{cat:'Galaxy',max:100,criteria:[
       {name:'Understanding of Theme & Topic Relevance',max:25,desc:'Contestant demonstrates clear understanding of \'Our Ocean is Rising... And So Are We\' and selects an issue genuinely relevant to the theme.'},
       {name:'Content Knowledge & Depth',max:20,desc:'Response reflects accurate, well-researched knowledge of the chosen ocean- or climate-related issue.'},
       {name:'Clarity & Structure of Delivery',max:20,desc:'Message is clearly organised and delivered within the 2–3 minute time limit, with a logical beginning, middle, and end.'},
       {name:'Confidence & Communication Skills',max:20,desc:'Contestant speaks with authority, confidence, eye contact, and clear articulation throughout the interview.'},
       {name:'Persuasiveness & Call to Action',max:15,desc:'Contestant leaves the judges with a compelling, decisive call to action or takeaway related to the issue discussed.'}
-    ],allCats:true},
+    ],allCats:true,rankByCategory:true},
     'Galaxy Wear':{cat:'Galaxy',max:100,criteria:[
       {name:'Costume Design & Creativity',max:25,desc:'Evaluate the originality, artistic vision, and thematic consistency of the costume design.'},
       {name:'Fit, Construction & Finish',max:20,desc:'Assess how well the costume fits the contestant and the quality of its construction and finishing details.'},
@@ -1297,6 +1297,7 @@ async function init(){
 
 function finishInit(){
   initDefaultJudges(); initDefaultAuditors(); initDefaultMCs(); initDefaultContestants();
+  syncHardcodedNames();
   initTestScores();
   if(!APP.displayMode)APP.displayMode='day';
   if(!APP.displaySettings) APP.displaySettings={showEventScores:true,showCategoryOverall:true,showAwards:false,enabledEvents:{},revealedCategories:{}};
@@ -1332,28 +1333,28 @@ function initDefaultJudges(){
     {id:'J2', name:'Sushi Awshado',               day:1, pin:'1102'},
     {id:'J3', name:"Sione Kolo Ma\u02BBu",        day:1, pin:'1103'},
     {id:'J4', name:'Lemoto Taufa',                 day:1, pin:'1104'},
-    {id:'J5', name:'Kilioti Veitufunga',           day:1, pin:'1105'},
+    {id:'J5', name:"Feleti \u02BBUhatafe",           day:1, pin:'1105'},
     {id:'J6', name:'Lady Mara',                    day:1, pin:'1106'},
-    // Day 2 — 13/07/2026 Orientation
-    {id:'J7',  name:'Laitia Fifita',                          day:2, pin:'2201'},
-    {id:'J8',  name:'HE. Keith Smith',                        day:2, pin:'2202'},
+    // Day 2 — 13/07/2026 Interview
+    {id:'J7',  name:'Siosinamele Lui',                        day:2, pin:'2201'},
+    {id:'J8',  name:'Olive Mafi',                             day:2, pin:'2202'},
     {id:'J9',  name:'Adi Mitimiti Pasikala',                  day:2, pin:'2203'},
     {id:'J10', name:'Frances Satini',                         day:2, pin:'2204'},
-    {id:'J11', name:'Betty Blake',                            day:2, pin:'2205'},
+    {id:'J11', name:"Katherine Vaha\u02BBakolo",              day:2, pin:'2205'},
     {id:'J12', name:"Hon. Fatafehi \u02BBo Lapaha Tuita",    day:2, pin:'2206'},
     // Day 3 — 14/07/2026 Galaxy Wear, Business Advertisement Talent, Island Creation
-    {id:'J13', name:'Lavi Maka',                   day:3, pin:'3301'},
+    {id:'J13', name:"Lupe \u02BBIlaiu",              day:3, pin:'3301'},
     {id:'J14', name:'Suliana Afu',                 day:3, pin:'3302'},
     {id:'J15', name:'Malakai Potolaka',            day:3, pin:'3303'},
     {id:'J16', name:'Hannah Birks',                day:3, pin:'3304'},
     {id:'J17', name:'Isikeli Fehoko',              day:3, pin:'3305'},
-    {id:'J18', name:'Anatuifangatukia Tatafu',     day:3, pin:'3306'},
+    {id:'J18', name:'Venus Brown',                day:3, pin:'3306'},
     // Day 4 — 15/07/2026 Men's Tribal Floral Printed Attire, Sarong & Sei, Talent Quest
     {id:'J19', name:'Rosalind Dawson',             day:4, pin:'4101'},
-    {id:'J20', name:'HE. Keith Smith',             day:4, pin:'4102'},
+    {id:'J20', name:'HE. Keith Smith',              day:4, pin:'4102'},
     {id:'J21', name:'Fakahoko Taufa',              day:4, pin:'4103'},
-    {id:'J22', name:'Siangana Palu',               day:4, pin:'4104'},
-    {id:'J23', name:"Mishka Tu\u02BBifua",         day:4, pin:'4105'},
+    {id:'J22', name:'Hon. Frederica Fatafehi Lapaha Tuita', day:4, pin:'4104'},
+    {id:'J23', name:'Jaiyah Sealua',              day:4, pin:'4105'},
     {id:'J24', name:'Tevita Vahai',                day:4, pin:'4106'},
     // Day 5 — 16/07/2026 Advocacy Talent, Rainbow Wear, International Wear
     {id:'J25', name:'Phylesha Brown-Acton',        day:5, pin:'5101'},
@@ -1361,16 +1362,50 @@ function initDefaultJudges(){
     {id:'J27', name:'Bridget Gray',                day:5, pin:'5103'},
     {id:'J28', name:'Robert Oliver',               day:5, pin:'5104'},
     {id:'J29', name:"'Ofa Likiliki",               day:5, pin:'5105'},
-    {id:'J30', name:'Polotu Paunga',               day:5, pin:'5106'}
+    {id:'J30', name:'Laitia Fifita',              day:5, pin:'5106'}
   ];
   judgeData.forEach(function(j){
     APP.judges.push({id:j.id,name:j.name,day:j.day,pin:j.pin,events:PD.days[j.day].events});
   });
   // Head Judge — views all results, releases to MC (no scoring)
   APP.judges.push({id:'HJ1',name:'Taufui Naufahu',day:0,pin:'9901',events:[],role:'headjudge'});
+  APP.judges.push({id:'HJ2',name:'Joseph Takai',day:0,pin:'9903',events:[],role:'headjudge'});
   // Assistant Judge — behavioural assessment (conduct deductions)
   APP.judges.push({id:'AJ1',name:'Simata Palu',day:0,pin:'9902',events:[],role:'assistant'});
+  APP.judges.push({id:'AJ2',name:'Coco Makisi',day:0,pin:'9904',events:[],role:'assistant'});
 }
+// Always sync judge/auditor/MC names from hardcoded defaults (so code changes take effect even with saved state)
+function syncHardcodedNames(){
+  var nameMap={
+    'J1':"Mo\u02BBunga \u02BBApikotoa",'J2':'Sushi Awshado','J3':"Sione Kolo Ma\u02BBu",'J4':'Lemoto Taufa',
+    'J5':"Feleti \u02BBUhatafe",'J6':'Lady Mara',
+    'J7':'Siosinamele Lui','J8':'Olive Mafi','J9':'Adi Mitimiti Pasikala','J10':'Frances Satini',
+    'J11':"Katherine Vaha\u02BBakolo",'J12':"Hon. Fatafehi \u02BBo Lapaha Tuita",
+    'J13':"Lupe \u02BBIlaiu",'J14':'Suliana Afu','J15':'Malakai Potolaka','J16':'Hannah Birks',
+    'J17':'Isikeli Fehoko','J18':'Venus Brown',
+    'J19':'Rosalind Dawson','J20':'HE. Keith Smith','J21':'Fakahoko Taufa',
+    'J22':'Hon. Frederica Fatafehi Lapaha Tuita','J23':'Jaiyah Sealua','J24':'Tevita Vahai',
+    'J25':'Phylesha Brown-Acton','J26':"Vika \u02BBAkauola",'J27':'Bridget Gray',
+    'J28':'Robert Oliver','J29':"'Ofa Likiliki",'J30':'Laitia Fifita',
+    'HJ1':'Taufui Naufahu','HJ2':'Joseph Takai','AJ1':'Simata Palu','AJ2':'Coco Makisi'
+  };
+  // Update existing judge names
+  APP.judges.forEach(function(j){if(nameMap[j.id])j.name=nameMap[j.id];});
+  // Add missing special roles (HJ/AJ) if not in saved state
+  var specialRoles=[
+    {id:'HJ1',name:'Taufui Naufahu',day:0,pin:'9901',events:[],role:'headjudge'},
+    {id:'HJ2',name:'Joseph Takai',day:0,pin:'9903',events:[],role:'headjudge'},
+    {id:'AJ1',name:'Simata Palu',day:0,pin:'9902',events:[],role:'assistant'},
+    {id:'AJ2',name:'Coco Makisi',day:0,pin:'9904',events:[],role:'assistant'}
+  ];
+  specialRoles.forEach(function(sr){
+    if(!APP.judges.find(function(j){return j.id===sr.id;})){
+      APP.judges.push(sr);
+      console.log('  ✅ Added missing role: '+sr.id+' '+sr.name);
+    }
+  });
+}
+
 function initDefaultAuditors(){
   if(APP.auditors.length)return;
   APP.auditors=[
@@ -1405,25 +1440,74 @@ function initDefaultContestants(){
     {id:'GLA7',number:7,name:'Katieli Tuipulotu Mahe',org:"Mister Tonga National Men\u02BBs Netball Team"},
     {id:'GLA8',number:8,name:"Samuela Kata Ta\u02BBofi",org:'Mister Echoes of Tonga Tour'}
   ];
-  // Miss Galaxy - 6 contestants
+  // Miss Galaxy - 5 contestants
   APP.contestants['Galaxy']=[
     {id:'GAL1',number:1,name:'Kilia Kaha',org:'Miss Lady Down Under'},
     {id:'GAL2',number:2,name:'Penina Paea Williams',org:'Miss TLA New Zealand'},
-    {id:'GAL3',number:3,name:'Semisi Roavea',org:'Miss Sunshine Rental Cars'},
-    {id:'GAL4',number:4,name:'Jenny Tuitupou',org:'Miss Ella Artistic Emporium'},
-    {id:'GAL5',number:5,name:'Dinah Jane Rexy',org:'Miss Federal Pacific Insurance'},
-    {id:'GAL6',number:6,name:'Lady Egypt Gaga',org:'Miss Jowella Company'}
+    {id:'GAL4',number:3,name:'Jenny Tuitupou',org:'Miss Ella Artistic Emporium'},
+    {id:'GAL5',number:4,name:'Dinah Jane Rexy',org:'Miss Federal Pacific Insurance'},
+    {id:'GAL6',number:5,name:'Lady Egypt Gaga',org:'Miss Jowella Company'}
   ];
 }
 function genPIN(){return String(Math.floor(1000+Math.random()*9000));}
 
 // Store a snapshot of the code's default PD.events so we can merge criteria into old saves
 var PD_CODE_DEFAULTS=JSON.parse(JSON.stringify(PD.events));
+
+// Top N finalists per event for results display (no particular order, no scores)
+var EVENT_TOP_N={
+  'Float Parade':4,
+  'Interview':{Katinia:3,Gladiator:5,Galaxy:3},
+  'Galaxy Wear':3,
+  'Business Advertisement Talent':5,
+  'Island Creation':3,
+  "Men's Tribal Floral Printed Attire":5,
+  'Sarong & Sei':3,
+  'Talent Quest':3,
+  'Advocacy Talent':3,
+  'Rainbow Wear':3,
+  'International Wear':5
+};
+
+// Build per-category ranked lists for events with rankByCategory (e.g., Interview)
+function buildCatRankings(evName,ev){
+  if(!ev.rankByCategory) return null;
+  var result=[];
+  PD.categories.forEach(function(cat){
+    var catConts=(APP.contestants[cat]||[]).map(function(c){return Object.assign({},c,{_cat:cat,r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;});
+    if(catConts.length) result.push({cat:cat,ranked:catConts,topN:getTopN(evName,cat)});
+  });
+  return result;
+}
+
+// Per-category approval helpers for rankByCategory events (Interview)
+function getApprovalKeys(evName,ev){
+  if(ev&&ev.rankByCategory){
+    return PD.categories.map(function(cat){return evName+'__'+cat;});
+  }
+  return [evName];
+}
+function isEventFullyApproved(evName,ev){
+  var keys=getApprovalKeys(evName,ev);
+  return keys.every(function(k){return APP.readyForMC&&APP.readyForMC[k];});
+}
+function isCatApproved(evName,cat){
+  return APP.readyForMC&&APP.readyForMC[evName+'__'+cat];
+}
+function getTopN(evName,cat){
+  var n=EVENT_TOP_N[evName];
+  if(typeof n==='object'&&cat)return n[cat]||4;
+  if(typeof n==='number')return n;
+  return 4;
+}
 var PD_DAYS_DEFAULTS=JSON.parse(JSON.stringify(PD.days));
-var APP_DATA_VERSION=8; // Bump this number whenever you change default criteria in the code
+var APP_DATA_VERSION=18; // Bump this number whenever you change default criteria in the code
 
 
-// TEST_SCORES removed - app ready for live user testing
+
+// ══════ TEST SCORES — Generated for testing all features ══════
+// Test scores removed - app ready for live events
+
 
 function loadState(){
   try{
@@ -1450,6 +1534,7 @@ function loadState(){
             PD.events[evName].criteria=JSON.parse(JSON.stringify(codeDef.criteria));
             PD.events[evName].max=codeDef.max;
             if(codeDef.allCats)PD.events[evName].allCats=codeDef.allCats;
+            if(codeDef.rankByCategory)PD.events[evName].rankByCategory=codeDef.rankByCategory;
             console.log('  ✅ Applied default criteria to "'+evName+'" ('+codeDef.criteria.length+' criteria, '+codeDef.max+' pts)');
           }
           // If event doesn't exist in saved data at all, add it
@@ -1484,6 +1569,159 @@ function loadState(){
           var totalC=Object.values(APP.contestants).flat().length;
           console.log('  ✅ '+totalC+' contestants loaded with actual names');
         }
+        // VERSION 9: Rename Orientation→Interview, sync judge names
+        if(savedVer<9){
+          console.log('  🔄 v9: Renaming Orientation → Interview, syncing judge names...');
+          // Rename event in PD.events
+          if(PD.events['Orientation']&&!PD.events['Interview']){
+            PD.events['Interview']=PD.events['Orientation'];
+            delete PD.events['Orientation'];
+            console.log('  ✅ PD.events: Orientation → Interview');
+          }
+          // Rename in PD.days
+          Object.keys(PD.days).forEach(function(d){
+            var day=PD.days[d];
+            if(day.events){var idx=day.events.indexOf('Orientation');if(idx>-1){day.events[idx]='Interview';}}
+            if(day.name==='Orientation')day.name='Interview';
+          });
+          // Migrate score keys
+          var oldScores={};
+          Object.keys(APP.scores).forEach(function(k){
+            if(k.indexOf('Orientation__')===0){
+              var newKey=k.replace('Orientation__','Interview__');
+              oldScores[newKey]=APP.scores[k];
+              delete APP.scores[k];
+            }
+          });
+          Object.assign(APP.scores,oldScores);
+          // Migrate locked events, readyForMC, displayReleased
+          ['lockedEvents','readyForMC','displayReleased','clearedResults'].forEach(function(prop){
+            if(APP[prop]&&APP[prop]['Orientation']){
+              APP[prop]['Interview']=APP[prop]['Orientation'];
+              delete APP[prop]['Orientation'];
+            }
+          });
+          // Migrate judge event arrays
+          APP.judges.forEach(function(j){
+            if(j.events){var idx=j.events.indexOf('Orientation');if(idx>-1)j.events[idx]='Interview';}
+          });
+          // Sync all judge names from hardcoded defaults
+          syncHardcodedNames();
+          console.log('  ✅ v9 migration complete');
+        }
+        // VERSION 10: Update Float Parade criteria, remove GAL3, renumber Galaxy
+        if(savedVer<10){
+          console.log('  🔄 v10: Updating Float Parade criteria, removing GAL3...');
+          if(PD_CODE_DEFAULTS['Float Parade']){
+            PD.events['Float Parade'].criteria=JSON.parse(JSON.stringify(PD_CODE_DEFAULTS['Float Parade'].criteria));
+            PD.events['Float Parade'].max=PD_CODE_DEFAULTS['Float Parade'].max;
+            console.log('  ✅ Float Parade: now '+PD.events['Float Parade'].criteria.length+' criteria, '+PD.events['Float Parade'].max+' pts');
+          }
+          // Remove GAL3 from Galaxy contestants and renumber
+          if(APP.contestants&&APP.contestants['Galaxy']){
+            APP.contestants['Galaxy']=APP.contestants['Galaxy'].filter(function(c){return c.id!=='GAL3';});
+            var numMap={'GAL4':3,'GAL5':4,'GAL6':5};
+            APP.contestants['Galaxy'].forEach(function(c){if(numMap[c.id])c.number=numMap[c.id];});
+            console.log('  ✅ Removed GAL3, renumbered Galaxy contestants');
+          }
+          syncHardcodedNames();
+          console.log('  ✅ v10 migration complete');
+        }
+        // VERSION 11: Force refresh contestants (GAL3 removed, Galaxy renumbered to 5)
+        if(savedVer<11){
+          console.log('  🔄 v11: Refreshing contestants (removing GAL3)...');
+          APP.contestants={};
+          initDefaultContestants();
+          syncHardcodedNames();
+          console.log('  ✅ v11: Galaxy now has '+APP.contestants['Galaxy'].length+' contestants');
+        }
+        // VERSION 12: Force event config refresh for new topN display rules
+        if(savedVer<12){
+          console.log('  🔄 v12: Refreshing event configs for new top N display rules...');
+          Object.entries(PD_CODE_DEFAULTS).forEach(function(e){
+            var evName=e[0],codeDef=e[1];
+            if(PD.events[evName]){
+              PD.events[evName].criteria=JSON.parse(JSON.stringify(codeDef.criteria));
+              PD.events[evName].max=codeDef.max;
+            }
+          });
+          syncHardcodedNames();
+          console.log('  ✅ v12 migration complete');
+        }
+        // VERSION 13: Clear scores for fresh test score injection
+        if(savedVer<13){
+          console.log('  🔄 v13: Clearing scores for fresh test data...');
+          APP.scores={};
+          APP.lockedEvents={};
+          APP.readyForMC={};
+          APP.displayReleased={};
+          APP.hjReleasedToMC={};
+          APP.finalsVerified=false;
+          APP.finalsToHJ=false;
+          APP.finalsPublished={};
+          APP.allScoresLocked=false;
+          APP.behaviouralScores={};
+          APP.behaviouralSubmissions={};
+          APP.contestants={};
+          initDefaultContestants();
+          syncHardcodedNames();
+          console.log('  ✅ v13: Ready for test scores');
+        }
+        // VERSION 14: Clear contestant profiles so photos re-inject properly
+        if(savedVer<14){
+          console.log('  🔄 v14: Resetting contestant profiles for photo re-injection...');
+          APP.contestantProfiles={};
+          APP.scores={};
+          APP.contestants={};
+          initDefaultContestants();
+          syncHardcodedNames();
+          console.log('  ✅ v14 complete');
+        }
+        // VERSION 16: Force sync rankByCategory and allCats from code defaults
+        if(savedVer<16){
+          console.log('  🔄 v16: Syncing event properties from code defaults...');
+          Object.entries(PD_CODE_DEFAULTS).forEach(function(e){
+            var evName=e[0],codeDef=e[1];
+            if(PD.events[evName]){
+              if(codeDef.allCats)PD.events[evName].allCats=codeDef.allCats;
+              if(codeDef.rankByCategory)PD.events[evName].rankByCategory=codeDef.rankByCategory;
+              PD.events[evName].criteria=JSON.parse(JSON.stringify(codeDef.criteria));
+              PD.events[evName].max=codeDef.max;
+            }
+          });
+          syncHardcodedNames();
+          console.log('  ✅ v16: rankByCategory synced for Interview');
+        }
+        // VERSION 17: Clear profiles so bios get injected
+        if(savedVer<17){
+          console.log('  🔄 v17: Clearing profiles for bio injection...');
+          APP.contestantProfiles={};
+          console.log('  ✅ v17 complete');
+        }
+        // VERSION 18: LIVE DEPLOYMENT — clear all test data
+        if(savedVer<18){
+          console.log('  🔄 v18: Clearing ALL test data for live deployment...');
+          APP.scores={};
+          APP.lockedEvents={};
+          APP.readyForMC={};
+          APP.displayReleased={};
+          APP.hjReleasedToMC={};
+          APP.finalsVerified=false;
+          APP.finalsToHJ=false;
+          APP.finalsPublished={};
+          APP.allScoresLocked=false;
+          APP.behaviouralScores={};
+          APP.behaviouralSubmissions={};
+          APP.overallReadyForMC={};
+          APP.clearedResults={};
+          APP.resubRequests={};
+          APP.unlockedScores={};
+          APP.contestantProfiles={};
+          APP.contestants={};
+          initDefaultContestants();
+          syncHardcodedNames();
+          console.log('  ✅ v18: App is clean and ready for live events');
+        }
         // Save the upgraded version and sync to all devices
         APP._dataVersion=APP_DATA_VERSION;
         saveStateLocal();
@@ -1503,12 +1741,131 @@ function saveState(){
   queueAppStateSync();
 }
 
+// Test score injection removed for live deployment
 // Inject default contestant photos
 injectContestantPhotos();
+
+
+
+  // ══════ INTERVIEW TOPICS AS OUTFITS ══════
+  if(!APP.contestantProfiles['KAT1'])APP.contestantProfiles['KAT1']={};
+  if(!APP.contestantProfiles['KAT1'].outfits)APP.contestantProfiles['KAT1'].outfits={};
+  if(!APP.contestantProfiles['KAT1'].outfits['Interview'])APP.contestantProfiles['KAT1'].outfits['Interview']="Women and Climate Change: Strengthening Community Resilience in Tonga (Houʻeiki Fafine mo e feliuliuaki ʻa e ʻea fakamalohia ha komiuniti ʻoku faʻa matuʻuekina ʻi Tonga)";
+  if(!APP.contestantProfiles['KAT2'])APP.contestantProfiles['KAT2']={};
+  if(!APP.contestantProfiles['KAT2'].outfits)APP.contestantProfiles['KAT2'].outfits={};
+  if(!APP.contestantProfiles['KAT2'].outfits['Interview'])APP.contestantProfiles['KAT2'].outfits['Interview']="Education for Girls and Climate Awareness in Tonga (Ako Maʻae Houʻeiki Fafine pea moe taukei ki he feliuliuaki ʻo e ʻea ʻi Tonga)";
+  if(!APP.contestantProfiles['KAT3'])APP.contestantProfiles['KAT3']={};
+  if(!APP.contestantProfiles['KAT3'].outfits)APP.contestantProfiles['KAT3'].outfits={};
+  if(!APP.contestantProfiles['KAT3'].outfits['Interview'])APP.contestantProfiles['KAT3'].outfits['Interview']="The Role of Women in Sustainable Farming and Food Security (Fatongia ʻo haʻa Fafine ʻi he ngaahi founga ngoue tuʻuloa mo e malu fakameʻatokoni)";
+  if(!APP.contestantProfiles['KAT4'])APP.contestantProfiles['KAT4']={};
+  if(!APP.contestantProfiles['KAT4'].outfits)APP.contestantProfiles['KAT4'].outfits={};
+  if(!APP.contestantProfiles['KAT4'].outfits['Interview'])APP.contestantProfiles['KAT4'].outfits['Interview']="Water Scarcity and Sanitation Challenges in Rural Tonga (Ngaahi pole ʻo e hahamolofia/siʻisiʻi ha maʻuʻanga vai ʻoku maʻa he ngaahi tukui kolo)";
+  if(!APP.contestantProfiles['KAT5'])APP.contestantProfiles['KAT5']={};
+  if(!APP.contestantProfiles['KAT5'].outfits)APP.contestantProfiles['KAT5'].outfits={};
+  if(!APP.contestantProfiles['KAT5'].outfits['Interview'])APP.contestantProfiles['KAT5'].outfits['Interview']="Climate Change and Its Impact on Maternal and Family Health (Feliuliuaki ʻa e ʻea pea mo hono ngaahi uesia ʻi he moʻui lelei ʻa e famili mo haʻa Fafine)";
+  if(!APP.contestantProfiles['GLA1'])APP.contestantProfiles['GLA1']={};
+  if(!APP.contestantProfiles['GLA1'].outfits)APP.contestantProfiles['GLA1'].outfits={};
+  if(!APP.contestantProfiles['GLA1'].outfits['Interview'])APP.contestantProfiles['GLA1'].outfits['Interview']="The Role of Men in Supporting Climate Resilience in Families and Villages (Fatongia ʻo e Houʻeiki Tangata hono poupoua e ngaahi famili mo e ngaahi kolo ke matuʻuaki e feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles['GLA2'])APP.contestantProfiles['GLA2']={};
+  if(!APP.contestantProfiles['GLA2'].outfits)APP.contestantProfiles['GLA2'].outfits={};
+  if(!APP.contestantProfiles['GLA2'].outfits['Interview'])APP.contestantProfiles['GLA2'].outfits['Interview']="Climate Change and Its Effects on Fisheries and Ocean Livelihoods (Feliuliuaki ʻa e ʻAe mo hono ngaahi uesia he Toutai pea mo e maʻuʻanga moʻui mei ʻoseni)";
+  if(!APP.contestantProfiles['GLA3'])APP.contestantProfiles['GLA3']={};
+  if(!APP.contestantProfiles['GLA3'].outfits)APP.contestantProfiles['GLA3'].outfits={};
+  if(!APP.contestantProfiles['GLA3'].outfits['Interview'])APP.contestantProfiles['GLA3'].outfits['Interview']="Climate Change and Youth Leadership in Disaster Preparedness in Tonga (Feliuliuaki ʻa e ʻAe pea mo e Taaimuʻa ha Taki Toʻutupu he tokateu ki ha fakatamaki ʻi Tonga)";
+  if(!APP.contestantProfiles['GLA4'])APP.contestantProfiles['GLA4']={};
+  if(!APP.contestantProfiles['GLA4'].outfits)APP.contestantProfiles['GLA4'].outfits={};
+  if(!APP.contestantProfiles['GLA4'].outfits['Interview'])APP.contestantProfiles['GLA4'].outfits['Interview']="Waste Management and Plastic Pollution: A Growing Environmental Crisis (Mapuleʻi ʻo e Veve mo e Fakaveve Pelesitiki: Ko ha palopalema faka-ʻatakai ʻoku fakautuutu)";
+  if(!APP.contestantProfiles['GLA5'])APP.contestantProfiles['GLA5']={};
+  if(!APP.contestantProfiles['GLA5'].outfits)APP.contestantProfiles['GLA5'].outfits={};
+  if(!APP.contestantProfiles['GLA5'].outfits['Interview'])APP.contestantProfiles['GLA5'].outfits['Interview']="Food Security in Tonga: Climate Change and the Future of Agriculture (Malu faka-Meʻatokoni ʻi Tonga: Feliuliuaki ʻo e ʻAe pea mo e Kahaʻu ʻo e Ngoue)";
+  if(!APP.contestantProfiles['GLA6'])APP.contestantProfiles['GLA6']={};
+  if(!APP.contestantProfiles['GLA6'].outfits)APP.contestantProfiles['GLA6'].outfits={};
+  if(!APP.contestantProfiles['GLA6'].outfits['Interview'])APP.contestantProfiles['GLA6'].outfits['Interview']="The Impact of Rising Sea Levels on Coastal Communities and Housing (Uesia ʻo e fakautuutu e maʻolunga ange ʻa e levolo ʻo e tahi he ngaahi kolo he matafanga pea mo e fale)";
+  if(!APP.contestantProfiles['GLA7'])APP.contestantProfiles['GLA7']={};
+  if(!APP.contestantProfiles['GLA7'].outfits)APP.contestantProfiles['GLA7'].outfits={};
+  if(!APP.contestantProfiles['GLA7'].outfits['Interview'])APP.contestantProfiles['GLA7'].outfits['Interview']="Renewable Energy Solutions for a Sustainable Tonga (Ngaahi solovaʻanga faka-maʻuʻanga ivi fakaenatula ki ha Tonga tuʻuloa)";
+  if(!APP.contestantProfiles['GLA8'])APP.contestantProfiles['GLA8']={};
+  if(!APP.contestantProfiles['GLA8'].outfits)APP.contestantProfiles['GLA8'].outfits={};
+  if(!APP.contestantProfiles['GLA8'].outfits['Interview'])APP.contestantProfiles['GLA8'].outfits['Interview']="Migration and Urban Drift: Climate Change and Youth Relocation (Hikifonua pea mo e hiki mei he ngaahi kolo ʻi ʻuta ki kolo: Feliuliuaki ʻa e ʻAe pea mo e fehikitaki ʻa e Toʻutupu)";
+  if(!APP.contestantProfiles['GAL1'])APP.contestantProfiles['GAL1']={};
+  if(!APP.contestantProfiles['GAL1'].outfits)APP.contestantProfiles['GAL1'].outfits={};
+  if(!APP.contestantProfiles['GAL1'].outfits['Interview'])APP.contestantProfiles['GAL1'].outfits['Interview']="Climate-Induced Displacement and Identity Challenges (Ngaahi pole fehangahangai mo hoto kita, fakalotoa ai ke ʻunu/hiki mei hoto nofoʻanga makatuʻunga he feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles['GAL2'])APP.contestantProfiles['GAL2']={};
+  if(!APP.contestantProfiles['GAL2'].outfits)APP.contestantProfiles['GAL2'].outfits={};
+  if(!APP.contestantProfiles['GAL2'].outfits['Interview'])APP.contestantProfiles['GAL2'].outfits['Interview']="Mental Health Impacts of Climate Change on Marginalized Communities (Nunuʻa Tamaki ʻo e Feliuliuaki ʻa e ʻAe he Fokoutua Fakaʻatamai ʻa e Ngaahi Komiuniti ʻoku fakatukutukukeheʻi)";
+  if(!APP.contestantProfiles['GAL4'])APP.contestantProfiles['GAL4']={};
+  if(!APP.contestantProfiles['GAL4'].outfits)APP.contestantProfiles['GAL4'].outfits={};
+  if(!APP.contestantProfiles['GAL4'].outfits['Interview'])APP.contestantProfiles['GAL4'].outfits['Interview']="Inclusive Disaster Response: Ensuring No One is Left Behind (Tokoni fakavavevave ʻi ha fakatamaki ʻoku fakalukufua/kau katoa: Fakapapauʻi ʻoku ʻikai liʻekina ha taha)";
+  if(!APP.contestantProfiles['GAL5'])APP.contestantProfiles['GAL5']={};
+  if(!APP.contestantProfiles['GAL5'].outfits)APP.contestantProfiles['GAL5'].outfits={};
+  if(!APP.contestantProfiles['GAL5'].outfits['Interview'])APP.contestantProfiles['GAL5'].outfits['Interview']="Advocacy and Representation: Amplifying Trans Voices in Climate Action (Fakaleʻolahi e ngaahi leʻo ʻo e kau Leiti he ngaahi ngaue felaveʻi mo e feliuliuaki ʻa e ʻAe)";
+  if(!APP.contestantProfiles['GAL6'])APP.contestantProfiles['GAL6']={};
+  if(!APP.contestantProfiles['GAL6'].outfits)APP.contestantProfiles['GAL6'].outfits={};
+  if(!APP.contestantProfiles['GAL6'].outfits['Interview'])APP.contestantProfiles['GAL6'].outfits['Interview']="Building Safe and Inclusive Spaces During Climate Crises (Langa ha ngaahi feituʻu malu fakalukufua/kau katoa)";
+
+  // ══════ CONTESTANT BIOS ══════
+  if(!APP.contestantProfiles['GAL1'])APP.contestantProfiles['GAL1']={};
+  APP.contestantProfiles['GAL1'].bio='Kilia Kaha, 32, from New South Wales, Australia, representing Lady Down Under, is an accomplished Tongan and Māori artist, performer, and model with expertise in voguing, hip hop choreography, lip-sync acting, singing, and rapping. A respected leader in Australia’s ballroom scene since 2017, she has dedicated herself to creating safe, empowering spaces through dance workshops, queer history education, and community events for the LGBTIQ+ community. As Miss Galaxy ambassador, she aims to champion visibility, support, and empowerment for the Tongan Leiti community both in Tonga and across the diaspora while advancing the “Guardians of the Earth” theme through climate change advocacy, education, and collaboration.';
+  if(!APP.contestantProfiles['GAL2'])APP.contestantProfiles['GAL2']={};
+  APP.contestantProfiles['GAL2'].bio='Penina Paea Williams, 34, from Neiafu, Hunga Vava’u, and currently based in Auckland, New Zealand, representing Tonga Leitis Association- New Zealand, is a farm worker with a passion for hard work, sports, modeling, entertainment, and dance and lip-sync performance. Through volunteer work in community clean-ups, youth programs, and environmental awareness initiatives, she has strengthened her leadership skills and deepened her commitment to service. Competing in the Tri Pageant 2026 under the “Guardians of the Earth” theme, Penina aims to inspire the young LGBTIQ+ community by promoting environmental protection, supporting climate action, and encouraging sustainable living practices.';
+  if(!APP.contestantProfiles['GAL4'])APP.contestantProfiles['GAL4']={};
+  APP.contestantProfiles['GAL4'].bio='Jenny Tuitupou, 21, from Talafoʻou, Tongatapu, representing Miss Ella Artistic Emporium, is an active member of the Tonga Leitis Association and dedicated youth volunteer deeply committed to community service and advocacy. Aligned with the “Guardians of the Earth” theme, she is inspired to stand up for environmental protection and raise awareness about climate change’s impacts on Tonga. Through her platform at Tri Pageant 2026, Jenny aims to amplify important conversations around climate change and gender issues while encouraging her community to take meaningful action toward a more sustainable and inclusive future.';
+  if(!APP.contestantProfiles['GAL5'])APP.contestantProfiles['GAL5']={};
+  APP.contestantProfiles['GAL5'].bio='Dinah Jane Rexy, 26, from Halaovave, representing Federal Pacific Insurance, currently works for Treasure Islands Tonga with a strong passion for entertaining and supporting her community. Recognizing the growing impacts of climate change on Tonga’s environment and people’s mental well-being, she is using her Tri Pageant 2026 platform to advance the “Guardians of the Earth” theme by raising awareness about climate action and resilience. As a representative of a long-time diamond sponsor, Dinah aims to educate the community on the critical role of insurance in providing financial protection and support during natural disasters.';
+  if(!APP.contestantProfiles['GAL6'])APP.contestantProfiles['GAL6']={};
+  APP.contestantProfiles['GAL6'].bio='Lady Egypt Gaga, 40, from Haveluloto Bulldog, representing Jowella Company, works as a receptionist at the Tonga Leitis Association Office with a deep passion for entertaining others and bringing joy to those around her. Inspired by the “Guardians of the Earth” theme and events such as the Hunga Tonga-Hunga Ha’apai eruption, she believes these are urgent reminders of humanity’s responsibility in addressing climate change. Determined to make history as the first Miss Galaxy winner in Tri Pageant 2026’s new era, she is committed to delivering powerful environmental messages that connect with and mobilize the public.';
+  if(!APP.contestantProfiles['KAT1'])APP.contestantProfiles['KAT1']={};
+  APP.contestantProfiles['KAT1'].bio='Lea Ruso Tonga Ramsay, 20, from Haveluloto, Tongatapu, representing Miss Jowella Company, is pursuing a Bachelor of Law at the University of the South Pacific (Tonga Campus) with a strong passion for public speaking and advocacy. Having volunteered with the Tonga Red Cross Society and participated in Camp Glow Youth Camp, she has been recognized for her self-empowerment, strength, and unity as an emerging young leader. Aligned with the “Guardians of the Earth” theme, Lea believes in using her voice to educate and advocate for climate change awareness and action in Tonga.';
+  if(!APP.contestantProfiles['KAT2'])APP.contestantProfiles['KAT2']={};
+  APP.contestantProfiles['KAT2'].bio='Sela Tapu’osi Mafi, 24, originally from Masilamea, Vava’u and Tongoleleka, Ha’apai, now residing in Longolongo, Tongatapu, representing RA Ethereal Australia, works as a Technical Officer at Tonga Communications Corporation and is a personal fitness trainer who runs her own women’s empowerment program, SHEfit. Aligned with the “Guardians of the Earth” theme, she believes personal health and fitness are vital to environmental protection. Through SHEfit and her platform at Tri Pageant 2026, Sela empowers women to prioritize their wellbeing while promoting the interconnection between healthy living and environmental stewardship across Tonga.';
+  if(!APP.contestantProfiles['KAT3'])APP.contestantProfiles['KAT3']={};
+  APP.contestantProfiles['KAT3'].bio='Halatono Nicolette Ashley Faka’osi, 20, from Lapaha, Ngele’ia (Tongatapu), Falevai, and Neiafu (Vava’u), representing Kaha’u Melie Services, is pursuing a Bachelor of Arts in History and Geography at the University of the South Pacific (Tonga Campus) while working as a Customer Care Agent at Digicel, Tonga. As a Tonga High School alumna competing in Tonga’s inaugural TRI Pageant, she sees this platform as an opportunity to strengthen her self-confidence and become a role model for other women. Embracing the “Guardians of the Earth” theme, she is committed to raising awareness about climate change and global warming.';
+  if(!APP.contestantProfiles['KAT4'])APP.contestantProfiles['KAT4']={};
+  APP.contestantProfiles['KAT4'].bio='Malia ’Epifania Peei, 22, from Houma-’Eua, ’Esia-Niuafo’ou, and Ma’ufanga-Tongatapu, representing Joleenz HTP, is a Customer Service Representative at Petani Quarry with strong communication and interpersonal skills. Passionate about building confidence and creating meaningful connections through socializing, dancing, and community engagement, she is committed to using the Tri Pageant 2026 platform to inspire young people and advocate for positive environmental change. Aligned with the “Guardians of the Earth” theme, Malia is dedicated to raising awareness about climate change and environmental responsibility.';
+  if(!APP.contestantProfiles['KAT5'])APP.contestantProfiles['KAT5']={};
+  APP.contestantProfiles['KAT5'].bio='Malia Soana Taake Kavai, 25, from Leimatuʻa (Vavaʻu) and Hofoa (Tongatapu), representing Miss Ella Artistic Emporium, is in her final year at the University of the South Pacific pursuing a Bachelor in Media & Journalism with a strong passion for storytelling, media, and singing. Having covered stories on climate change’s impact on Pacific Island communities, she is committed to ensuring these voices are heard, protected, and acted upon. Through her platform at Tri Pageant 2026, Malia aims to inspire young women to advocate for social challenges affecting Tonga and the Pacific.';
+  if(!APP.contestantProfiles['GLA1'])APP.contestantProfiles['GLA1']={};
+  APP.contestantProfiles['GLA1'].bio='Andrew Palu, 26, from Kameli, Falaleu, Neiafu-Vava’u, and currently based in Tongatapu, representing Mister Ella Artistic Emporium, is a dedicated rugby player actively involved in community volunteering. Aligned with the “Guardians of the Earth” theme, he views community work as a powerful platform to connect with people, raise climate awareness, and educate communities about climate change issues. Through his participation in Tri Pageant 2026, Andrew aims to build personal confidence and strengthen his ability to create meaningful opportunities supporting volunteer initiatives.';
+  if(!APP.contestantProfiles['GLA2'])APP.contestantProfiles['GLA2']={};
+  APP.contestantProfiles['GLA2'].bio='Maile Niu Tupou, 21, from Paini Tu’u Ua, representing Ha’apai Delight, is an Electrical Engineering graduate from Tonga National University who currently works as a fitness and gym trainer and professional electrician. Passionate about fitness, bodybuilding, rugby, boxing, and cooking, he is stepping into pageantry for the first time through the Mister Gladiator category at Tonga’s inaugural Tri Pageant. Aligned with the “Guardians of the Earth” theme, Maile is eager to deepen his understanding of climate change and leverage his platform to educate and inspire his community to take action on environmental issues.';
+  if(!APP.contestantProfiles['GLA3'])APP.contestantProfiles['GLA3']={};
+  APP.contestantProfiles['GLA3'].bio='English Hansen Joshua All Saints Ngu Kupu, 23, representing Mister RA Ethereal Australia from Vava’u and Tongatapu, is a student at Tonga National University’s Maritime School and serves in His Majesty’s Armed Forces. With a deep passion for marine life shaped by growing up near the ocean, he is committed to using his platform at Tri Pageant 2026 to advance the “Guardians of the Earth” theme by raising awareness about climate change, promoting environmental protection and climate resilience, and empowering young Tongans to address social issues affecting their communities.';
+  if(!APP.contestantProfiles['GLA4'])APP.contestantProfiles['GLA4']={};
+  APP.contestantProfiles['GLA4'].bio='Penisoni Tuifua Maile, 26, from Kahoua & Haveluloto-Tongatapu, representing House of Disha Style, is a personal fitness trainer passionate about fitness, weightlifting, and maintaining a healthy lifestyle. Competing in Tri Pageant 2026, he sees the “Guardians of the Earth” theme as a valuable opportunity to strengthen his confidence, develop his skills, and expand his platform while learning more about important community issues, including climate change. Through the pageant, Penisoni aims to share his knowledge and expertise while inspiring positive change.';
+  if(!APP.contestantProfiles['GLA5'])APP.contestantProfiles['GLA5']={};
+  APP.contestantProfiles['GLA5'].bio='Ngatu E Hau Rodriques Lui, 18, from ’Utulangivaka (Vava’u), Vaini (Tongatapu), and Auckland, New Zealand, representing Mister Jowella Company, is a first-year student at Auckland University of Technology pursuing a Bachelor of Architecture and Future Environments. With a strong passion for sustainability and community service, he actively participates in tree planting initiatives and serves as a dedicated member of the Vinnies Organization. Aligned with the “Guardians of the Earth” theme, Ngatu believes this platform empowers young men to take meaningful action toward creating an ecologically sustainable and culturally rich future for Tonga.';
+  if(!APP.contestantProfiles['GLA6'])APP.contestantProfiles['GLA6']={};
+  APP.contestantProfiles['GLA6'].bio='Falisi John Uhatafe, 24, from Lapaha, Kolomotu’a, representing Alpha Car Rentals, is a Flight Attendant for American Airlines with expertise in customer service, passenger safety, inflight hospitality, and emergency response. Drawing parallels between safeguarding passengers and protecting the environment, he is passionate about becoming a guardian for the Earth by advocating for climate justice. Through his exceptional communication skills and dedication to teamwork, Falisi aims to use his Tri Pageant 2026 platform to inspire positive change, promote inclusivity, and amplify youth voices in climate change advocacy.';
+  if(!APP.contestantProfiles['GLA7'])APP.contestantProfiles['GLA7']={};
+  APP.contestantProfiles['GLA7'].bio='Katieli Tuipulotu Mahe, 30, from Fangale’ounga, Koulo, Ha’apai, representing the Tonga National Men’s Netball Team, is a Computer Programmer at the Tonga Statistics Department with a Bachelor of Science in Mathematics and Information Systems from the University of the South Pacific. Having witnessed the impacts of climate change in Ha’apai, he embraces the “Guardians of the Earth” theme by advocating for environmental protection, sustainable living, and informed community action. Through his platform at Tri Pageant 2026, Katieli aims to raise awareness about climate resilience while growing in confidence and leadership.';
+  if(!APP.contestantProfiles['GLA8'])APP.contestantProfiles['GLA8']={};
+  APP.contestantProfiles['GLA8'].bio='Samuela Kata Ta’ofi, 23, rooted in Silapeluua, representing Echoes of Tonga Tour, is a fitness and gym trainer at Fisi’i Saafa Gym and recognized title holder in Tonga’s bodybuilding scene. Passionate about bodybuilding, connecting with people, music, and karaoke, he is committed to using his platform at Tri Pageant 2026 to strengthen his confidence while developing his skills and capacity. Having personally witnessed climate change’s impacts on Tonga’s environment and nation, Samuela embraces the “Guardians of the Earth” theme and is dedicated to raising awareness and educating communities about climate action.';
+
+saveStateLocal(); // Persist photos to localStorage
 // Generate random test scores for testing
 // Test scores disabled - app reset for live testing
 
 // ══════ OFFLINE ══════
+// Prevent page scroll when touching sliders (fixes accidental score resets on mobile)
+document.addEventListener('touchstart',function(e){
+  if(e.target.classList.contains('score-slider')){
+    e.target._touching=true;
+    // Store the initial value when touch starts
+    var idx=e.target.id.replace('sl_','').replace('bsl_','');
+    _prevSliderVals['sl_'+idx]=parseInt(e.target.value)||0;
+  }
+},{passive:true});
+document.addEventListener('touchend',function(e){
+  if(e.target.classList.contains('score-slider')){
+    e.target._touching=false;
+  }
+},{passive:true});
+document.addEventListener('touchmove',function(e){
+  if(e.target.classList.contains('score-slider')){
+    e.preventDefault();
+  }
+},{passive:false});
+
 function setupOffline(){
   function up(){
     APP.isOnline=navigator.onLine;
@@ -1598,6 +1955,7 @@ function verifyPIN(){
   if(!APP.judges||APP.judges.length===0){initDefaultJudges();}
   if(!APP.auditors||APP.auditors.length===0){initDefaultAuditors();}
   if(!APP.mcs||APP.mcs.length===0){initDefaultMCs();}
+  syncHardcodedNames();
 
   var matched=false;
   if(APP.pendingRole==='admin'){
@@ -2019,7 +2377,7 @@ function renderScoringForm(){
 }
 function selectContestant(cid){
   const ev=PD.events[APP.currentEvent];
-  // For allCats events (Float Parade, Orientation), search all categories
+  // For allCats events (Float Parade, Interview), search all categories
   if(ev.allCats){
     var found=null;
     PD.categories.forEach(function(cat){
@@ -2050,7 +2408,7 @@ function renderCriteriaForm(evName,c){
     <div>${locked?'<span class="badge bg-ok">✓ Submitted</span>':''}${ul?'<span class="badge bg-warn">✎ Edit Mode — Resubmit to lock</span>':''}</div>
   </div>
   ${_cp.bio?`<div style="font-size:0.8rem;color:var(--text2);background:var(--parch);border-radius:var(--radius);padding:0.55rem 0.7rem;margin-bottom:0.6rem;">${_cp.bio}</div>`:''}
-  ${_outfit?`<div style="font-size:0.8rem;color:var(--text);background:rgba(212,160,18,0.08);border:1px solid rgba(212,160,18,0.25);border-radius:var(--radius);padding:0.55rem 0.7rem;margin-bottom:0.8rem;"><strong>👗 Outfit for this event:</strong> ${_outfit}</div>`:''}
+  ${_outfit?`<div style="font-size:0.8rem;color:var(--text);background:rgba(212,160,18,0.08);border:1px solid rgba(212,160,18,0.25);border-radius:var(--radius);padding:0.55rem 0.7rem;margin-bottom:0.8rem;"><strong>👗 Description for this event:</strong> ${_outfit}</div>`:''}
   <div class="criteria-list">`;
   if(!ed.criteria.length){
     h+=`<div class="empty-state"><div class="icon">⏳</div>Criteria for this event haven't been set up yet. Please contact the Admin to add scoring criteria before judging.</div>`;
@@ -2073,8 +2431,19 @@ function renderCriteriaForm(evName,c){
   return h;
 }
 // REQUIREMENT #6 & #10: hard cap at criterion max, visually flag when a criterion is at its max/threshold
-function updSl(i,m){const s=document.getElementById(`sl_${i}`),n=document.getElementById(`nm_${i}`);let v=Math.min(m,Math.max(0,parseInt(s.value)||0));n.value=v;s.value=v;flagMax(i,v,m);recalc();}
-function updNm(i,m){const n=document.getElementById(`nm_${i}`),s=document.getElementById(`sl_${i}`);let v=Math.min(m,Math.max(0,parseInt(n.value)||0));n.value=v;s.value=v;flagMax(i,v,m);recalc();}
+// Track previous slider values to detect accidental resets
+var _prevSliderVals={};
+function updSl(i,m){const s=document.getElementById(`sl_${i}`),n=document.getElementById(`nm_${i}`);let v=Math.min(m,Math.max(0,parseInt(s.value)||0));
+  // Jump guard: if previous value was >30% of max and new value is 0, likely accidental touch
+  var prevKey='sl_'+i;
+  var prev=_prevSliderVals[prevKey];
+  if(prev!==undefined && prev>Math.round(m*0.3) && v===0){
+    // Reject the change — restore previous value
+    s.value=prev;n.value=prev;return;
+  }
+  _prevSliderVals[prevKey]=v;
+  n.value=v;s.value=v;flagMax(i,v,m);recalc();}
+function updNm(i,m){const n=document.getElementById(`nm_${i}`),s=document.getElementById(`sl_${i}`);let v=Math.min(m,Math.max(0,parseInt(n.value)||0));_prevSliderVals['sl_'+i]=v;n.value=v;s.value=v;flagMax(i,v,m);recalc();}
 function flagMax(i,v,m){const lbl=document.getElementById(`critmax_${i}`);if(!lbl)return;const atMax=v>=m;lbl.style.color=atMax?'var(--danger)':'';lbl.style.fontWeight=atMax?'700':'';lbl.textContent=`/ ${m} pts${atMax?' ⚠ MAX':''}`;}
 function recalc(){let t=0;PD.events[APP.currentEvent].criteria.forEach((_,i)=>{t+=parseInt(document.getElementById(`nm_${i}`)?.value||0);});const el=document.getElementById('totalDisp');if(el)el.textContent=t;}
 async function submitScore(){
@@ -2266,7 +2635,7 @@ function adminTab(tab,btn){
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.2rem;">
               <span style="font-weight:700;font-size:0.95rem;">${evName}</span>
-              <span class="badge bg-${cl}" style="font-size:0.65rem;">${ev.allCats?'All':catLabel(ev.cat)}</span>
+              <span class="badge bg-${cl}" style="font-size:0.65rem;">${ev.allCats?'All Categories':catLabel(ev.cat)}</span>
             </div>
             <div style="display:flex;gap:0.8rem;font-size:0.78rem;color:var(--text3);flex-wrap:wrap;">
               <span>\ud83d\udccb ${critCount} criteri${critCount===1?'on':'a'}</span>
@@ -2431,7 +2800,7 @@ function openEditContestantModal(cat,idx){
   var profile=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};
   var outfitFields=Object.entries(PD.events).filter(function(e){return e[1].cat===cat||e[1].allCats;}).map(function(e){
     var evName=e[0],od=(profile.outfits&&profile.outfits[evName])||'';
-    return '<div style="margin-bottom:0.5rem;"><label class="form-label" style="font-size:0.78rem;margin-bottom:0.15rem;">'+evName+'</label><textarea class="form-input" rows="1" style="font-size:0.78rem;width:100%;" id="contEditOutfit_'+evName.replace(/[^a-z0-9]/gi,'_')+'" placeholder="Outfit description for MC...">'+od+'</textarea></div>';
+    return '<div style="margin-bottom:0.5rem;"><label class="form-label" style="font-size:0.78rem;margin-bottom:0.15rem;">'+evName+'</label><textarea class="form-input" rows="1" style="font-size:0.78rem;width:100%;" id="contEditOutfit_'+evName.replace(/[^a-z0-9]/gi,'_')+'" placeholder="Description for MC...">'+od+'</textarea></div>';
   }).join('');
 
   var html='<div style="max-width:440px;">';
@@ -2450,7 +2819,7 @@ function openEditContestantModal(cat,idx){
   html+='<label class="form-label">Bio</label>';
   html+='<textarea class="form-input" id="contEditBio" rows="2" style="margin-bottom:0.8rem;">'+(profile.bio||'')+'</textarea>';
   html+='<div style="border-top:1px dashed var(--border);padding-top:0.6rem;margin-bottom:0.8rem;">';
-  html+='<div style="font-size:0.8rem;font-weight:600;color:var(--text3);margin-bottom:0.4rem;">👗 Outfit Descriptions (read by MC on stage):</div>';
+  html+='<div style="font-size:0.8rem;font-weight:600;color:var(--text3);margin-bottom:0.4rem;">👗 Contestant Descriptions (read by MC on stage):</div>';
   html+=outfitFields;
   html+='</div>';
   html+='<div style="display:flex;justify-content:flex-end;gap:0.5rem;">';
@@ -3066,7 +3435,7 @@ async function clearScoresAndApprovalsInSupabase(evNames){
   if (approvalsErr) console.error('Error clearing approvals in Supabase:', approvalsErr);
 }
 
-// REQUIREMENT #7: reset scores for a single day-group (Day 1 Float Parade / Day 2 Orientation / Day 3-5) without touching other days
+// REQUIREMENT #7: reset scores for a single day-group (Day 1 Float Parade / Day 2 Interview / Day 3-5) without touching other days
 function confirmResetDay(day){
   const evs=PD.days[day].events;
   APP._pendingResetDay=day;
@@ -3185,13 +3554,13 @@ function auditorTab(tab,btn){
       const totalExpected=dayJudges.length*conts.length;
       let submitted=0;dayJudges.forEach(j=>conts.forEach(c=>{if(APP.scores[`${evName}__${c.id}__${j.id}`])submitted++;}));
       const pct=totalExpected>0?Math.round(submitted/totalExpected*100):0;
-      const readyMC=APP.readyForMC&&APP.readyForMC[evName];
+      const readyMC=ev.rankByCategory?isEventFullyApproved(evName,ev):(APP.readyForMC&&APP.readyForMC[evName]);
       const dispRel=APP.displayReleased&&APP.displayReleased[evName];
       h+=`<div style="margin-bottom:1.8rem;padding:0.8rem;background:var(--deep2);border-radius:var(--radius);border:1px solid var(--border2);">
         <div style="display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin-bottom:0.4rem;">
           <span style="width:9px;height:9px;border-radius:50%;background:var(--accent-${cl});display:inline-block;"></span>
           <span style="font-size:1rem;font-weight:700;">${evName}</span>
-          <span class="badge bg-${cl}">${ev.cat==='Galaxy'&&ev.allCats?'All':catLabel(ev.cat)}</span>
+          <span class="badge bg-${cl}">${ev.allCats?'All Categories':catLabel(ev.cat)}</span>
           ${readyMC?'<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);border:1px solid var(--green);">\u2705 Approved</span>':''}
           ${dispRel?'<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);border:1px solid var(--green);">\ud83d\udcfa Published</span>':''}
 
@@ -3201,6 +3570,41 @@ function auditorTab(tab,btn){
           <div class="bar-track" style="flex:1;"><div class="bar-fill" style="width:${pct}%;background:${pct===100?'var(--green)':'var(--gold)'}"></div></div>
           <span style="font-size:0.75rem;font-weight:700;color:${pct===100?'var(--green)':'var(--gold-light)'};min-width:55px;text-align:right;">${submitted}/${totalExpected||0}</span>
         </div>`;
+      // Per-category rankings for Interview
+      if(ev.rankByCategory){
+        var _catRanksAud=buildCatRankings(evName,ev);
+        if(_catRanksAud){
+          _catRanksAud.forEach(function(crAud){
+            var _clAud=crAud.cat.toLowerCase();
+            h+='<div style="margin-bottom:1rem;padding:0.6rem;background:var(--parch);border-radius:var(--radius);border-left:3px solid var(--accent-'+_clAud+');">';
+            h+='<div style="font-weight:700;font-size:0.92rem;color:var(--accent-'+_clAud+');margin-bottom:0.5rem;">'+catLabel(crAud.cat)+'</div>';
+            if(crAud.ranked.length>=3){
+              var cpod=[crAud.ranked[1],crAud.ranked[0],crAud.ranked[2]];
+              h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;margin-bottom:0.6rem;">';
+              cpod.forEach(function(cp,cpi){
+                var crank=cpi===1?0:cpi===0?1:2;
+                var cpPhoto=(APP.contestantProfiles&&APP.contestantProfiles[cp.id]&&APP.contestantProfiles[cp.id].photo)||'';
+                var cbCol=['#D4A012','#D4A012','#9E9E9E','#CD7F32'][crank];
+                h+='<div style="text-align:center;padding:0.5rem 0.3rem;border-radius:var(--radius);border:1px solid '+cbCol+';background:'+(crank===0?'rgba(212,160,18,0.06)':'var(--parch2)')+';">';
+                h+='<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;border:2px solid '+cbCol+';display:inline-flex;align-items:center;justify-content:center;background:var(--parch2);">'+(cpPhoto?'<img src="'+cpPhoto+'" style="width:100%;height:100%;object-fit:cover;">':'')+'</div>';
+                h+='<div style="width:20px;height:20px;border-radius:50%;background:'+cbCol+';color:#fff;font-size:0.65rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin:-6px 0 0 -10px;position:relative;z-index:1;">'+(crank+1)+'</div>';
+                h+='<div style="font-weight:700;font-size:0.75rem;margin-top:0.2rem;">#'+cp.number+' '+(cp.org||cp.name)+'</div>';
+                h+='<div style="font-size:0.95rem;font-weight:700;margin-top:0.1rem;">'+cp.r.avg.toFixed(2)+'</div></div>';
+              });
+              h+='</div>';
+            }
+            crAud.ranked.forEach(function(cAud,iAud){
+              var rcAud=['#D4A012','#9E9E9E','#CD7F32'];
+              var rbgAud=iAud<3?['rgba(212,160,18,0.06)','rgba(192,192,192,0.04)','rgba(205,127,50,0.04)'][iAud]:'transparent';
+              h+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.4rem;background:'+rbgAud+';border-bottom:1px solid var(--border2);border-radius:3px;margin-bottom:1px;">';
+              h+='<div style="width:24px;height:24px;border-radius:50%;background:'+(iAud<3?rcAud[iAud]:'#777')+';color:#fff;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(iAud+1)+'</div>';
+              h+='<span style="flex:1;font-weight:600;font-size:0.85rem;">#'+cAud.number+' '+(cAud.org||cAud.name)+'</span>';
+              h+='<span style="font-weight:700;font-size:1rem;">'+cAud.r.avg.toFixed(2)+'</span></div>';
+            });
+            h+='</div>';
+          });
+        }
+      } else
       // Top 3 podium
       if(ranked.length>=3){
         const podium=[ranked[1],ranked[0],ranked[2]];
@@ -3220,7 +3624,8 @@ function auditorTab(tab,btn){
           </div>`;});
         h+=`</div>`;
       }
-      // Full ranking list
+      // Full ranking list (skip for per-category events like Interview)
+      if(!ev.rankByCategory){
       if(!allConts.length){h+=`<div style="font-size:0.85rem;color:var(--text-muted);">No scores yet</div>`;}
       else{allConts.forEach((c,i)=>{
         const r=c.r;const score=r?r.avg:0;const judgeCount=r?r.scores.length:0;
@@ -3240,10 +3645,28 @@ function auditorTab(tab,btn){
             <div style="font-size:0.65rem;color:var(--text-muted);">${judgeCount} judge${judgeCount!==1?'s':''}</div>
           </div>
         </div>`;});}
-      // Approve & Publish
+      } // close if(!ev.rankByCategory)
+      // Approve & Publish — per-category for Interview
       h+=`<div style="display:flex;gap:0.4rem;margin-top:0.6rem;flex-wrap:wrap;">`;
-      if(!readyMC&&!dispRel){var appDis=pct<100;h+=`<button class="btn-primary" style="font-size:0.78rem;padding:0.3rem 0.85rem;${appDis?'opacity:0.4;cursor:not-allowed;':''}" ${appDis?'disabled title="All scores must be submitted first"':''} onclick="approveEvent('${evName.replace(/'/g,"\\'")}')">\u2705 Approve</button>`;}
-      if(readyMC&&!dispRel)h+=`<button class="btn-secondary" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="unapproveEvent('${evName.replace(/'/g,"\\'")}')">\u21a9 Undo</button>`;
+      if(ev.rankByCategory){
+        // Per-category approve buttons
+        PD.categories.forEach(function(_aCat){
+          var _aKey=evName+'__'+_aCat;
+          var _aCl=_aCat.toLowerCase();
+          var _aApproved=APP.readyForMC&&APP.readyForMC[_aKey];
+          var _safeKey=_aKey.replace(/'/g,"\\\\'" );
+          if(!_aApproved){
+            var _aDis=pct<100;
+            h+=`<button class="btn-primary" style="font-size:0.72rem;padding:0.25rem 0.6rem;border-left:3px solid var(--accent-${_aCl});${_aDis?'opacity:0.4;cursor:not-allowed;':''}" ${_aDis?'disabled':''} onclick="approveEvent('${_safeKey}')">\u2705 ${catLabel(_aCat)}</button> `;
+          } else {
+            h+=`<span class="badge" style="font-size:0.68rem;background:rgba(45,106,53,0.15);color:var(--green);border-left:3px solid var(--accent-${_aCl});padding:0.25rem 0.5rem;">${catLabel(_aCat)} \u2705</span>`;
+            h+=`<button class="btn-secondary" style="font-size:0.6rem;padding:0.12rem 0.3rem;" onclick="unapproveEvent('${_safeKey}')">\u21a9</button> `;
+          }
+        });
+      } else {
+        if(!readyMC&&!dispRel){var appDis=pct<100;h+=`<button class="btn-primary" style="font-size:0.78rem;padding:0.3rem 0.85rem;${appDis?'opacity:0.4;cursor:not-allowed;':''}"${appDis?' disabled':''} onclick="approveEvent('${evName.replace(/'/g,"\\'")}')">✅ Approve</button>`;}
+        if(readyMC&&!dispRel)h+=`<button class="btn-secondary" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="unapproveEvent('${evName.replace(/'/g,"\\'")}')">↩ Undo</button>`;
+      }
       h+=`</div></div>`;
     });
     h+=`</div>`;
@@ -3263,6 +3686,12 @@ function auditorTab(tab,btn){
         return te>0&&su===te;
       });
       const catEvNames=catEvents.map(function(e){return e[0];});
+      // For rankByCategory events, check per-category approval
+      var allEventsApproved=catEvents.every(function(e){
+        var _evN=e[0],_ev=e[1];
+        if(_ev.rankByCategory) return getApprovalKeys(_evN,_ev).every(function(k){return APP.readyForMC&&APP.readyForMC[k];});
+        return APP.readyForMC&&APP.readyForMC[_evN];
+      });
       h+=`<div style="margin-bottom:1.8rem;padding:1rem;background:var(--deep2);border-radius:var(--radius);border-left:4px solid var(--accent-${cl});">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem;">
           <div style="font-size:1rem;font-weight:700;">${catLabel(cat)} <span style="font-size:0.78rem;font-weight:400;color:var(--text-muted);">${allCatConts.length} contestants</span></div>
@@ -3339,6 +3768,8 @@ function auditorTab(tab,btn){
       var cl=ev.cat.toLowerCase();
       var evDay=0;for(var dd=1;dd<=5;dd++){if(PD.days[dd].events.includes(evName))evDay=dd;}
       var mConts=evConts(ev);
+      // For rankByCategory events (Interview): filter to selected category only
+      if(ev.rankByCategory){mConts=mConts.filter(function(c){return c._cat===APP._matrixCat;});}
       var mJudges=APP.judges.filter(function(j){return j.events&&j.events.includes(evName);});
       var totalExp=mJudges.length*mConts.length,submitted=0;
       mJudges.forEach(function(j){mConts.forEach(function(c){if(APP.scores[evName+'__'+c.id+'__'+j.id])submitted++;});});
@@ -3347,7 +3778,7 @@ function auditorTab(tab,btn){
 
       h+=`<div class="card" style="border-left:3px solid var(--accent-${cl});margin-bottom:1.2rem;">`;
       h+=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem;">`;
-      h+=`<div class="card-title" style="margin-bottom:0;">${evName} <span class="badge bg-${cl}" style="font-size:0.65rem;">${catLabel(ev.cat)}</span></div>`;
+      h+=`<div class="card-title" style="margin-bottom:0;">${evName} <span class="badge bg-${cl}" style="font-size:0.65rem;">${(ev.allCats?'All Categories':catLabel(ev.cat))}</span></div>`;
       h+=`<div style="display:flex;gap:0.4rem;flex-wrap:wrap;">`;
       h+=`<span style="font-size:0.72rem;padding:0.2rem 0.5rem;border:1px solid var(--border);border-radius:12px;color:var(--text3);">${dayDateShort(evDay)}</span>`;
       h+=`<span style="font-size:0.72rem;padding:0.2rem 0.5rem;border:1px solid var(--border);border-radius:12px;color:var(--text3);">Max ${ev.max} pts</span>`;
@@ -3456,7 +3887,7 @@ function auditorTab(tab,btn){
       const cl=ev.cat.toLowerCase(),conts=evConts(ev),dayJ=APP.judges.filter(j=>j.events.includes(evName));
       const pairs=[];dayJ.forEach(j=>conts.forEach(c=>{const k=`${evName}__${c.id}__${j.id}`;if(APP.scores[k])pairs.push({j,c,k});}));
       if(!pairs.length)return;anyScores=true;
-      h+=`<div class="card"><div class="card-title"><span class="dot" style="background:var(--accent-${cl})"></span>${evName} <span class="badge bg-${cl}">${catLabel(ev.cat)}</span> <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted);">${pairs.length} scores</span></div>`;
+      h+=`<div class="card"><div class="card-title"><span class="dot" style="background:var(--accent-${cl})"></span>${evName} <span class="badge bg-${cl}">${(ev.allCats?'All Categories':catLabel(ev.cat))}</span> <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted);">${pairs.length} scores</span></div>`;
       pairs.forEach(({j,c,k})=>{
         const sc=APP.scores[k],ul=APP.unlockedScores[k];
         h+=`<div style="display:flex;align-items:center;gap:0.7rem;padding:0.45rem 0.6rem;background:var(--deep2);border-radius:var(--radius);margin-bottom:0.35rem;flex-wrap:wrap;">
@@ -3488,7 +3919,7 @@ function auditorTab(tab,btn){
     h+=`<span class="badge" style="padding:0.3rem 0.7rem;font-size:0.78rem;${APP.finalsToHJ?'background:rgba(45,106,53,0.15);color:var(--green);border:1px solid var(--green);':'background:rgba(196,30,58,0.1);color:var(--crimson);border:1px solid rgba(196,30,58,0.3);'}">${APP.finalsToHJ?'\u2705 Sent to Head Judge':'\u23f3 Not Sent to HJ'}</span>`;
     h+=`</div>`;
     // Day 3-5 event rankings preview
-    for(var fd=2;fd<=5;fd++){
+    for(var fd=1;fd<=5;fd++){
       var fEvs=PD.days[fd].events;
       h+=`<div class="card"><div class="card-title">${dayLabel(fd)} \u2014 Event Rankings</div>`;
       fEvs.forEach(function(evName){
@@ -3496,18 +3927,40 @@ function auditorTab(tab,btn){
         var cl=ev.cat.toLowerCase();
         var conts=evConts(ev);
         var ranked=conts.map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;});
+        // For rankByCategory events (Interview): show per-category rankings
+        var _perCatHtml='';
+        if(ev.rankByCategory){
+          var _catRA=buildCatRankings(evName,ev);
+          if(_catRA&&_catRA.length){
+            _catRA.forEach(function(crA){
+              var _clA=crA.cat.toLowerCase();
+              _perCatHtml+='<div style="margin:0.5rem 0;padding:0.4rem;border-left:3px solid var(--accent-'+_clA+');background:var(--parch);border-radius:var(--radius);">';
+              _perCatHtml+='<div style="font-weight:700;font-size:0.85rem;color:var(--accent-'+_clA+');margin-bottom:0.3rem;">'+catLabel(crA.cat)+'</div>';
+              crA.ranked.forEach(function(cA,iA){
+                var rcA=['#D4A012','#9E9E9E','#CD7F32'];
+                _perCatHtml+='<div style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem;border-bottom:1px solid var(--border2);font-size:0.82rem;">';
+                _perCatHtml+='<div style="width:22px;height:22px;border-radius:50%;background:'+(iA<3?rcA[iA]:'#777')+';color:#fff;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(iA+1)+'</div>';
+                _perCatHtml+='<span style="flex:1;font-weight:600;">#'+cA.number+' '+(cA.org||cA.name)+'</span>';
+                _perCatHtml+='<span style="font-weight:700;">'+cA.r.avg.toFixed(2)+'</span></div>';
+              });
+              _perCatHtml+='</div>';
+            });
+          }
+        }
         var hjKey='ev:'+evName;
         var hjRel=APP.hjReleasedToMC&&APP.hjReleasedToMC[hjKey];
         var fpKey='fev:'+evName;
         var fPub=APP.finalsPublished&&APP.finalsPublished[fpKey];
         h+=`<div style="margin-bottom:1rem;padding:0.6rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-${cl});">`;
         h+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.3rem;">`;
-        h+=`<span style="font-weight:700;font-size:0.9rem;">${evName} <span class="badge bg-${cl}">${catLabel(ev.cat)}</span></span>`;
+        h+=`<span style="font-weight:700;font-size:0.9rem;">${evName} <span class="badge bg-${cl}">${(ev.allCats?'All Categories':catLabel(ev.cat))}</span></span>`;
         h+=`<div style="display:flex;gap:0.3rem;flex-wrap:wrap;">`;
         if(hjRel)h+=`<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\ud83c\udfa4 MC</span>`;
         if(fPub)h+=`<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\ud83d\udcfa Display</span>`;
         h+=`</div></div>`;
-        if(!ranked.length){h+=`<div style="font-size:0.82rem;color:var(--text-muted);">No scores yet</div>`;}
+        if(_perCatHtml){
+          h+=_perCatHtml;
+        } else if(!ranked.length){h+=`<div style="font-size:0.82rem;color:var(--text-muted);">No scores yet</div>`;}
         else{ranked.forEach(function(c,i){
           var rc=['#D4A012','#9E9E9E','#CD7F32'];
           h+=`<div style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;border-bottom:1px solid var(--border2);font-size:0.85rem;">
@@ -3559,7 +4012,13 @@ function auditorTab(tab,btn){
     // ═══ PRE-SUBMISSION CHECKLIST ═══
     var allEventsApproved=true;var unapprovedEvs=[];
     Object.keys(PD.events).forEach(function(evN){
-      if(!APP.readyForMC||!APP.readyForMC[evN]){allEventsApproved=false;unapprovedEvs.push(evN);}
+      var _evC=PD.events[evN];
+      if(_evC&&_evC.rankByCategory){
+        var _allCatOK=PD.categories.every(function(cat){return APP.readyForMC&&APP.readyForMC[evN+'__'+cat];});
+        if(!_allCatOK){allEventsApproved=false;unapprovedEvs.push(evN);}
+      } else {
+        if(!APP.readyForMC||!APP.readyForMC[evN]){allEventsApproved=false;unapprovedEvs.push(evN);}
+      }
     });
     var allCatsApproved=true;var unapprovedCats=[];
     PD.categories.forEach(function(cat){
@@ -3709,8 +4168,6 @@ function injectContestantPhotos(){
   if(!APP.contestantProfiles['GAL1'].photo)APP.contestantProfiles['GAL1'].photo='data:image/jpeg;base64,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';
   if(!APP.contestantProfiles['GAL2'])APP.contestantProfiles['GAL2']={};
   if(!APP.contestantProfiles['GAL2'].photo)APP.contestantProfiles['GAL2'].photo='data:image/jpeg;base64,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';
-  if(!APP.contestantProfiles['GAL3'])APP.contestantProfiles['GAL3']={};
-  if(!APP.contestantProfiles['GAL3'].photo)APP.contestantProfiles['GAL3'].photo='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCACNAMgDASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAAAAMBAgQFBgf/xAA7EAACAQMCBAQDBwEHBQEAAAABAgMABBESIQUxQVETImFxMoGRBhQjQqGxwfAVNlJ0stHhBzRFU1TC/8QAGQEBAAMBAQAAAAAAAAAAAAAAAAECAwQF/8QAJREAAgICAQQCAgMAAAAAAAAAAAECEQMhEgQiMUETMkJRUmHw/9oADAMBAAIRAxEAPwDxLfiN5cYHM1VmAGleX70MwxpXl+9VGOWN/eu4oQOe5qfSoxnAFWKkc9qAvFjBBx5qmRcEaV29KWDpPtQSW3JJoBplUrgjpypfsKjbFXRSx7DqaEEhSxO/zoZtgF+Grk5BA2Ucz3qyRahz2oC64IBXG/5aTIpyTyXrnpWmJ443wBnB3JG1ZWmR38rls5yCeY6Z9K5Xnd9qOj4Ult7IYjbzhsVMhDurLyHWky30BCg26tgYznTWjKG3huA2lJCQ+RgDv8qh55L0I4Yv2Vkyzds9aqzADQnLqe9XNsr4dANxnYilsCDnIx2xVl1H8kPg5fUAakGoHMnB2qwBHp710p3tHO1Tpl4gCDn+hUOukjTUZwfLzFBYnmTUkDC6lN8ilg4OxPvUGpVS21ASNbnGaksANI5dT3qT8JC7L1NHhHuKAYhBXy8qKoEZPNqFFQQZMEHB2pqKjbj6VfyuNhkUuPyykULkAFZMFthV3KlMjcipKK29LYaWINCCtHWj0q6JnfkKAI11H06mrFhjSvL96DltkBx6UaDyxQgFA0sc745VoSQ2yghcMdwTzpcUZKkkHoBjmaZdaRGpVslBjSd8Z/euTqcn4o7ulwt978GeS4jaD8X/ABHPciseuaSFlhi6blRyH81ukMEekkI8rjbUMgfKlJLOSFAUs50qqDrWK0Rk26MEdvI+CR5Seprp217FFww2d3G4O5STmFz6V63h32agS3RrpdUhGWA5CovvstaOhMYaMkbEGq81IlQcPD2eT4efF1pG8beQ6QdsHlmszs6GTIDZPMYx60X9u/Db5rceXK4J7g9aW0csaBlfIkONt81agpOq9o0wzaymx5Y2NPkwVzWe2dT+GAQefsaYwIJB966en8UZdS7aZFBxQN6sq5OOneuk5gVSxwNqszYBRcgdfWg8tKg4796rpPahBIGUY527VMb6Tg8qAvlOxzRoOcZHvQAzlj/FFAQ77gfOipAqIEE52qzRgkkE1JUvHkA96Xko21VLAVZCDz9ahjqYmmvgx5+lLRSx9O9ACqSd+XUmmKNXlXZBUEFhpQbVZEdDtuOtACbhulVXng8utWXyhh+hpkaiQhEBZiO1LrZFW6QyKNhbsyMd+o6elYrmTTEUB2U51Y5mt00ptIHtwQ2dyyj4a48kolVEAwqZOeprzpPnNyPSb4Y1EmeVXuGdR5dgBnoK9B9jLMcQ4k00uNMIyOgWvLnc4zua+if9PrULY3bNgF30fID/AJquR1Eyh3SOrc8SitdQjuIZSuMopUn5AHP70q44ooih0Lre4HkAGfn7fSm/2FwpLsXEkSIybnHlGBvk0vikXDeIBLUzx6JU8gRsbcxjvWS0atHkPtZGskXiO8bTQthioHI+2etcK0DPpDTHY8u1ei45wO14Vwm58OQySNpIJ6AEbV5eIOjoynAI51tHwZXU02OQsJSJWPlOdJrY2eZ/esksTHEmCFyfh7+lbI0DKCrZ23OeVbYZVInNj7X/AEQq6jgDAq4GfKuy9TVtORpQbVKqykArtXacBVfgbG3aqZIBGdq0LGQrVGmMDB51IFITnGMjtVT7U9EBkwuPSoaF6miBQUk7DNFXI0jC/M0UAROMBTzFS0anrj3qixsTtgU1ImY1FFhOjcAch1qCus4XIUfrWvwy3lA2q5iwBtinEWc8rhiNRA6VYoR8TEYpzQ5YgDPtVhbjSM5OOhpRFiSMY9a28OtLi5aRoIclBgsdlGe5p/D+HJe3kURyEzqcjoor0dzGsTaYEjSJdlQcqwztpcf2bYV3cv0eMuuFXiRtnBTmQkgJrkNCYycDI/b3r219gxktDbyIeYXIYetcOWyAQgKefI9q50lR0cHJ2jgSBR8PLFfTvsMDHwkpMV8QuWOD8v3BrwEduX4lDGqk5YEgjnjeu7Dxd7Hi0KW4yttAI51XkxJyf1JrnyW0WglGTPdXzNGshhtluJCuSHYKoHrXkYuIauIRuLCzlcNuYidS+2dgB2r0MPG7aW2MqlZARy6j3FcO54yCHIt417EACs4tG6dKmhHHgtxE0WsAyYVc9z0rx4KsNGCMfD6iupcXEk9ws0g1JEfEP9fSueludeSCfbeujHHRyZJbJjikZtKI+M+YgZ3roW9q4V9CE57A16f7NIIuEIw0rrZixI3O+BXTkAY4227bVrFUxbSPFIh1Yz1ppUg7nYV2b+xV5DJGBk8x39a57QkfKvQjtWcUlTFKhIGVz71UomfMm49K1hCcGrMqkbir8StmDSCfIoHtTQg04xtTtIAwBRpxRIGOSMDIxRT5oy+4O1FQ0SVNtg5WpWMkkAbCtxAIxVVXBPrVuIsXHCAN6l48jFXbPtQuTU0QJjh8PfHOoZMtnTWoL0NAjBYDPM0oWa+GKIITIRgv+1TNKXY70GVdGldiNsVmbUTjPOsXDk9midGeeVHc4Qsy8iPzVjLyMCFJXfka3EIoJ/Nn9KzsrucBcljjFZSxqzeOVqNHKvE06Xjbzg81PKuhwuyWLgt3cSkfeZnABJ3wNz+tdGDg6O+bg5x+VeVa34JCVzGSh6ZNcmeN6NMT3bPNNHhABkH0q9nYS3s/hxAsRzJ5KO9dSLhby3uhplCL/hGSa9DZWkVsqwQKAx3xzY+p9K5uLs15KmcS/wCDWUPDlyzCSPOkj8xPeuG1sQhkiwpHMd/WvozW0YjxOAw6riuTxa1iCjwoQVXzkBR7fOumOOS2ZrLH6nG4bcww2ZlulwschES53JPPaulFew3MRkhY56g7EVwJrdQzFQQM9e1PtRJGMq2B7V0Qx+zPJPdHVaTIrNKoJzTASYwTzpec12RjRyydi9OKhk2ppFQRWlFBQUUaAeYpmkUYpQEMm2KKcwyKKigQKkL1oGOlWFSCNOavbW/j3McIcJrONRGwqDUAkHIJB7ijBsXh6NYNeC7TwVkEZ/DbOSM8qZFwzUZ2FzHot40lZtDbqwBGPrTIv7qz/wCcT/TV+D6TY8V8RmC/d1yQMkDVWTbpu/8AaLaMs9o33f71HIksIbQzKCCp6ZBqL6yNmIdciv40ayrpBGFPLOeta5ysHAgLUs8VzL+LI4wQy7hcfrnNHHv/AB2f/ij/AJom7QZw3iLkkdq28OtDoOojWc4PanWa2hSXxmcNo8uANzkc/SrxlY91J+dJKxZI4df8PeBZbiOZJlDL+G5AHqwG3610Ftrglke3kSRDhlP8HkR61umeMRWBkkC5t16EnnWlJ1uLtplwFVdgx7bDPzrhnG9s3jJo58XBzazOshAZjqOn1rfDBDaW5KARhz8R8zOe570+4BezjlLAtH5GIOfas/FCAIMHy+CMVCSDbMNy2VWQyK0ZYrsDkH1FJv7WOC6EMtygYYBGliN6rNC4tTc5XwtWn4t9WM8qZx0239sHx2lGyasAYxpHrmt0t0ZnmJrdkung+NkkMYx1IOK03ljJw+6e1mxrTG45HIztTLJC11LOSo8FSwLsFGs7LufU5+Vb+KRmfhdjellaSMfd5irBtxupyPStlqSQk72ZLjhssfDYr5XWSFzg6c5TtketLtrLx1jImVPEk8PBU7HGc+2K32t6to9ulwNdpPbBJk9NTb+4qnErN+HweFq1L45aOQfnUoMEVZN3TKMzrYI1k92LtPCRwh/DbOSMjas9zD4EugSBwVVgwBGQRnr71vh/uvc/5tP9NcwknmSdsVeLbbKsjFRipoq5BUiirUUBXGKkUGigJxRiiigNiXiLw17LwSVeQSFte+QMduVRaXYtre5hMWsXCBGOrGBnO21ZKmq8UTZsjvQvDns3hDqZfFVtWMHGPnUcQvReeB+Fo8GJYh5s5A+XOslFOKuxbBCQ3vtWhBkb1mNNjkAwT9KSJWzsy3InigTw9HgoIwdWcgfKtFrKFjMYU5LAls9q40t1oTKgazsAelZhd3CzDXMwwxCkDGQB1rknSVG8IOWz2YuUS3ddORIMHfGKw3FzqtxHIhdVPlIOGX/iuRDPxW4tw4eFQowM8+ftTNdzlRO0bb+YqOlYwi2y048fZN1d6oI4ApSBGLadWSxPUn/ilX9/De3LTy2zamABCy4Gwx2pF0pxqjOodjWIMS2CCDXXCK8mDOhJI16swhg0mScO3n6nZRy5Df6022aaGxntGg8RLgg51/CQMgjbniufFNJCSY20551f7zMc+Yb4zsN8cq04eitjLg+LHCQmkIvhjL51YPTb1p08l3Na21hIoPhO4j339R/tWX7xLude5JJJHfnUm5mOCX3Xkcb9OvyFTxZFmuORhwx7XwMpIVnLeLvttnGOXeudTTcSnYsMYYchyPMUqpiqDYUUUVYgKKKKAiiioNATRUDnVqABRRRQEMwVSzEBQMknpWNeIxPfm3Qq6E4SRT8W36VsYBlKsMgjBFY7fhtvbTeKmskcgx2FRuyVVHVitfEtTP52CsQ2gZ0DGxI7H+K0rZxxPCGMgEixsX0jA1DJ+n8VnspHWdBCqCUBtLEnqOR71ofxsxvoi1pGgG5zhQvT2O/zrOV2Shclhpe8Msn/AG5XGB8eWA/Yg/MVefhsaNOzM8iwu6OygEoB1I7GqtLcvrgbw2IhVM9SoYEEd+Q37CoaSdruW8RYROruSQTtnIJx1A/msZRbRtHIky/CSsV+nDzMWVljZcjBAkAOPlW24tAkTys7BVBJUjzfFgfX+DXKiW7i4lFdRiFZFVEGoEqQmkA/PI3HrTjd3rwESeA0WkkkA+YFgcehDGqwUkxkcW7RcWod4B4umKcZ1MPgIODn54+tZo7MtCWJIkSYRyqfy5zv+hHypjvcS2qsHSNBGNOkkEDO/vucn5VeWS4L3MpaIfeI8vpBIbcbj1z+5rbdmdqhMlsiW0cwMpEiM+cDAwxAB+lVuLYwRQyatQkBzt8LDmPoQfnWhkfTBFJHESgMaksdwfN/+sUiW5laJ4JfN+Lry2cqeRA/roKumyroz0UUVoVCiiigCoo9qakLNq8reUZOBVZTUfJKTYuirOhTB6NyOMUVZNNWiCpqKmooAqagVNAFFFFAFFFFAAJU5UkHuKkzS/8Asf61WoNKBUyyZJ1tvtzqvjyMcmRs981LAEGsjsQcCqskc88msFZHGOW/Ll/sPpQk0ikhXbB57/12FZsaiwzyGaYpqhJpSeUDSJGC8sZpiyP0dvr/AF2rPnampV0QPEsoUKJGwOmaqSSck5J51AqasQFFFFAFFFFACgFwDtmtCXDxArqYHkcis1WLtjBOcd6znjUnsspUWkctuSTnvRS8kneirRXFUQ3Z/9k=';
   if(!APP.contestantProfiles['GAL4'])APP.contestantProfiles['GAL4']={};
   if(!APP.contestantProfiles['GAL4'].photo)APP.contestantProfiles['GAL4'].photo='data:image/jpeg;base64,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';
   if(!APP.contestantProfiles['GAL5'])APP.contestantProfiles['GAL5']={};
@@ -3777,25 +4234,60 @@ function renderProjByEvent(){
   const lb=document.getElementById('projectorLeaderboard');
   const medals=['🥇','🥈','🥉'];
   lb.innerHTML=Object.entries(PD.events).map(([evName,ev])=>{
-    var topPub=APP.displayReleased&&APP.displayReleased[evName];
-    var finalPub=APP.finalsPublished&&APP.finalsPublished['fev:'+evName];
+    var topPub=ev.rankByCategory?PD.categories.some(function(cat){return APP.displayReleased&&APP.displayReleased[evName+'__'+cat];}):APP.displayReleased&&APP.displayReleased[evName];
+    var finalPub=ev.rankByCategory?PD.categories.some(function(cat){return APP.finalsPublished&&APP.finalsPublished['fev:'+evName+'__'+cat];}):APP.finalsPublished&&APP.finalsPublished['fev:'+evName];
     if(!topPub&&!finalPub) return '';
     const cl=ev.cat.toLowerCase();
     const evDay=getEventDay(evName);
     const allRanked=(evConts(ev)).map(c=>({...c,r:calcFinal(evName,c.id)})).filter(c=>c.r).sort((a,b)=>b.r.avg-a.r.avg);
     // Finals published: show full rankings with scores
     if(finalPub){
+      // Per-category for Interview
+      if(ev.rankByCategory){
+        var _catRPF=buildCatRankings(evName,ev);
+        if(_catRPF){
+          _catRPF=_catRPF.filter(function(crPF){return APP.finalsPublished&&APP.finalsPublished['fev:'+evName+'__'+crPF.cat];});
+          if(!_catRPF.length) return '';
+          return _catRPF.map(function(crPF){
+            var _clPF=crPF.cat.toLowerCase();
+            var _html='<div class="proj-cat-card" style="border-top:3px solid var(--accent-'+_clPF+');"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-'+_clPF+'" style="font-size:0.72rem;">'+catLabel(crPF.cat)+'</span><div class="proj-cat-title" style="color:var(--accent-'+_clPF+');font-size:1.1rem;margin-top:0.3rem;">'+evName+'</div></div>';
+            crPF.ranked.forEach(function(cPF,iPF){
+              var mdPF=['🥇','🥈','🥉'];
+              var mPF=iPF<3?mdPF[iPF]:'<span style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;background:#777;color:#fff;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;">'+(iPF+1)+'</span>';
+              var ppPF=APP.contestantProfiles&&APP.contestantProfiles[cPF.id]||{};
+              _html+='<div class="proj-row '+(iPF<3?'t'+(iPF+1):'')+'"><span style="font-size:1.2rem;min-width:2rem;">'+mPF+'</span>'+(ppPF.photo?'<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="'+ppPF.photo+'" style="width:100%;height:100%;object-fit:cover;"></div>':'')+'<div style="flex:1;font-size:0.95rem;font-weight:700;">'+(cPF.org||cPF.name)+'</div><span class="proj-score">'+cPF.r.avg.toFixed(2)+'</span></div>';
+            });
+            _html+='</div>';
+            return _html;
+          }).join('');
+        }
+      }
       var allR2=allRanked;
-      return `<div class="proj-cat-card" style="border-top:3px solid var(--accent-${cl});"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-${cl}" style="font-size:0.72rem;">${catLabel(ev.cat)}</span><div class="proj-cat-title" style="color:var(--accent-${cl});font-size:1.1rem;margin-top:0.3rem;">${evName}</div></div>${!allR2.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':allR2.map((c2,i2)=>{const _pp2=APP.contestantProfiles&&APP.contestantProfiles[c2.id]||{};const medals2=['🥇','🥈','🥉'];const medal2=i2<3?medals2[i2]:'<span style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;background:#777;color:#fff;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;">'+(i2+1)+'</span>';return `<div class="proj-row ${i2<3?'t'+(i2+1):''}"><span style="font-size:1.2rem;min-width:2rem;">${medal2}</span>${_pp2.photo?`<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_pp2.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<div style="flex:1;font-size:0.95rem;font-weight:700;">${c2.org||c2.name}</div><span class="proj-score">${c2.r.avg.toFixed(2)}</span></div>`;}).join('')}</div>`;
+      return `<div class="proj-cat-card" style="border-top:3px solid var(--accent-${cl});"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-${cl}" style="font-size:0.72rem;">${(ev.allCats?'All Categories':catLabel(ev.cat))}</span><div class="proj-cat-title" style="color:var(--accent-${cl});font-size:1.1rem;margin-top:0.3rem;">${evName}</div></div>${!allR2.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':allR2.map((c2,i2)=>{const _pp2=APP.contestantProfiles&&APP.contestantProfiles[c2.id]||{};const medals2=['🥇','🥈','🥉'];const medal2=i2<3?medals2[i2]:'<span style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;background:#777;color:#fff;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;">'+(i2+1)+'</span>';return `<div class="proj-row ${i2<3?'t'+(i2+1):''}"><span style="font-size:1.2rem;min-width:2rem;">${medal2}</span>${_pp2.photo?`<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_pp2.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<div style="flex:1;font-size:0.95rem;font-weight:700;">${c2.org||c2.name}</div><span class="proj-score">${c2.r.avg.toFixed(2)}</span></div>`;}).join('')}</div>`;
     }
-    // Top 4 published (Day 2-5): random order no scores
-    if(evDay>=2){
-      var top4=allRanked.slice(0,4);
+    // Top N published: random order no scores
+    if(topPub){
+      // Per-category rankings (e.g., Interview)
+      if(ev.rankByCategory){
+        var _catRanks=buildCatRankings(evName,ev);
+        if(_catRanks){
+          // Only show categories that have been published to display
+          _catRanks=_catRanks.filter(function(cr){return APP.displayReleased&&APP.displayReleased[evName+'__'+cr.cat];});
+          if(!_catRanks.length) return '';
+          return _catRanks.map(function(cr){
+            var _cl2=cr.cat.toLowerCase();
+            var _topSlice=cr.ranked.slice(0,cr.topN);
+            for(var _si=_topSlice.length-1;_si>0;_si--){var _sj=Math.floor(Math.random()*(_si+1));var _tmp=_topSlice[_si];_topSlice[_si]=_topSlice[_sj];_topSlice[_sj]=_tmp;}
+            return '<div class="proj-cat-card" style="border-top:3px solid var(--accent-'+_cl2+');"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-'+_cl2+'" style="font-size:0.72rem;">'+catLabel(cr.cat)+'</span><div class="proj-cat-title" style="color:var(--accent-'+_cl2+');font-size:1.1rem;margin-top:0.3rem;">'+evName+'</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.2rem;">Finalists (in no particular order)</div></div>'+(!_topSlice.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':_topSlice.map(function(c){var _pp3=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return '<div class="proj-row"><span style="font-size:1.1rem;min-width:2rem;">⭐</span>'+(_pp3.photo?'<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="'+_pp3.photo+'" style="width:100%;height:100%;object-fit:cover;"></div>':'')+'<div style="flex:1;font-size:0.95rem;font-weight:700;">'+(c.org||c.name)+'</div></div>';}).join(''))+'</div>';
+          }).join('');
+        }
+      }
+      var _tn=getTopN(evName,ev.cat);
+      var top4=allRanked.slice(0,_tn);
       for(var si=top4.length-1;si>0;si--){var sj=Math.floor(Math.random()*(si+1));var tmp=top4[si];top4[si]=top4[sj];top4[sj]=tmp;}
-      return `<div class="proj-cat-card" style="border-top:3px solid var(--accent-${cl});"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-${cl}" style="font-size:0.72rem;">${catLabel(ev.cat)}</span><div class="proj-cat-title" style="color:var(--accent-${cl});font-size:1.1rem;margin-top:0.3rem;">${evName}</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.2rem;">Top 4 Finalists (in no particular order)</div></div>${!top4.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':top4.map(c=>{const _pp=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return `<div class="proj-row"><span style="font-size:1.1rem;min-width:2rem;">⭐</span>${_pp.photo?`<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_pp.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<div style="flex:1;font-size:0.95rem;font-weight:700;">${c.org||c.name}</div></div>`;}).join('')}</div>`;
+      return `<div class="proj-cat-card" style="border-top:3px solid var(--accent-${cl});"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-${cl}" style="font-size:0.72rem;">${(ev.allCats?'All Categories':catLabel(ev.cat))}</span><div class="proj-cat-title" style="color:var(--accent-${cl});font-size:1.1rem;margin-top:0.3rem;">${evName}</div><div style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin-top:0.2rem;">Finalists (in no particular order)</div></div>${!top4.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':top4.map(c=>{const _pp=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return `<div class="proj-row"><span style="font-size:1.1rem;min-width:2rem;">⭐</span>${_pp.photo?`<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_pp.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<div style="flex:1;font-size:0.95rem;font-weight:700;">${c.org||c.name}</div></div>`;}).join('')}</div>`;
     }
-    var allR1=allRanked;
-    return `<div class="proj-cat-card" style="border-top:3px solid var(--accent-${cl});"><div style="text-align:center;margin-bottom:0.7rem;"><span class="badge bg-${cl}" style="font-size:0.72rem;">${catLabel(ev.cat)}</span><div class="proj-cat-title" style="color:var(--accent-${cl});font-size:1.1rem;margin-top:0.3rem;">${evName}</div></div>${!allR1.length?'<div style="text-align:center;color:var(--text-muted);padding:1rem;">No scores yet</div>':allR1.map((c,i)=>{const _pp=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};const medal=i<3?medals[i]:'<span style="display:inline-flex;width:1.5rem;height:1.5rem;border-radius:50%;background:#777;color:#fff;font-size:0.65rem;font-weight:700;align-items:center;justify-content:center;">'+(i+1)+'</span>';return `<div class="proj-row ${i<3?'t'+(i+1):''}"><span style="font-size:1.2rem;min-width:2rem;">${medal}</span>${_pp.photo?`<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_pp.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<div style="flex:1;font-size:0.95rem;font-weight:700;">${c.org||c.name}</div><span class="proj-score">${c.r.avg.toFixed(2)}</span></div>`;}).join('')}</div>`;
+    return '';
   }).join('');
 }
 function renderProjByDay(){
@@ -3806,8 +4298,8 @@ function renderProjByDay(){
     const evs=PD.days[day].events;
     const sections=evs.map(evName=>{
       const ev=PD.events[evName];const cl=ev.cat.toLowerCase();
-      var _topPub=APP.displayReleased&&APP.displayReleased[evName];
-      var _finPub=APP.finalsPublished&&APP.finalsPublished['fev:'+evName];
+      var _topPub=ev.rankByCategory?PD.categories.some(function(cat){return APP.displayReleased&&APP.displayReleased[evName+'__'+cat];}):APP.displayReleased&&APP.displayReleased[evName];
+      var _finPub=ev.rankByCategory?PD.categories.some(function(cat){return APP.finalsPublished&&APP.finalsPublished['fev:'+evName+'__'+cat];}):APP.finalsPublished&&APP.finalsPublished['fev:'+evName];
       if(!_topPub&&!_finPub){
         return '';
       }
@@ -3815,23 +4307,56 @@ function renderProjByDay(){
       const medals=['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
       // Finals published: full rankings with scores
       if(_finPub){
+        if(ev.rankByCategory){
+          var _catRPD=buildCatRankings(evName,ev);
+          if(_catRPD){
+            _catRPD=_catRPD.filter(function(crPD){return APP.finalsPublished&&APP.finalsPublished['fev:'+evName+'__'+crPD.cat];});
+            if(!_catRPD.length) return '';
+            return _catRPD.map(function(crPD){
+              var _clPD=crPD.cat.toLowerCase();
+              var _h2='<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-'+_clPD+');display:inline-block;"></span>'+evName+' — '+catLabel(crPD.cat)+'</div>';
+              var mdPD2=['🥇','🥈','🥉'];
+              crPD.ranked.forEach(function(cPD,iPD){
+                var mPD=iPD<3?mdPD2[iPD]:'<span style="display:inline-flex;width:1.4rem;height:1.4rem;border-radius:50%;background:#777;color:#fff;font-size:0.6rem;font-weight:700;align-items:center;justify-content:center;">'+(iPD+1)+'</span>';
+                var _ppPD=APP.contestantProfiles&&APP.contestantProfiles[cPD.id]||{};_h2+='<div class="proj-row '+(iPD===0?'t1':'')+'"><span style="font-size:1rem;min-width:1.8rem;">'+mPD+'</span>'+(_ppPD.photo?'<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="'+_ppPD.photo+'" style="width:100%;height:100%;object-fit:cover;"></div>':'')+'<span class="proj-name" style="font-size:0.95rem;">'+(cPD.org||cPD.name)+'</span><span class="proj-score" style="font-size:1.05rem;">'+cPD.r.avg.toFixed(2)+'</span></div>';
+              });
+              _h2+='</div>';
+              return _h2;
+            }).join('');
+          }
+        }
         var ranked=allR;
         return `<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-${cl});display:inline-block;"></span>${evName}</div>
-          ${!ranked.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting…</div>':ranked.map((c,i)=>{var md=i<3?medals[i]:'<span style="display:inline-flex;width:1.4rem;height:1.4rem;border-radius:50%;background:#777;color:#fff;font-size:0.6rem;font-weight:700;align-items:center;justify-content:center;">'+(i+1)+'</span>';return `<div class="proj-row ${i===0?'t1':''}"><span style="font-size:1rem;min-width:1.8rem;">${md}</span><span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span><span class="proj-score" style="font-size:1.05rem;">${c.r.avg.toFixed(2)}</span></div>`;}).join('')}
+          ${!ranked.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting…</div>':ranked.map((c,i)=>{var md=i<3?medals[i]:'<span style="display:inline-flex;width:1.4rem;height:1.4rem;border-radius:50%;background:#777;color:#fff;font-size:0.6rem;font-weight:700;align-items:center;justify-content:center;">'+(i+1)+'</span>';return `<div class="proj-row ${i===0?'t1':''}"><span style="font-size:1rem;min-width:1.8rem;">${md}</span>${(()=>{const _ppR=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return _ppR.photo?`<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_ppR.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:'';})()}<span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span><span class="proj-score" style="font-size:1.05rem;">${c.r.avg.toFixed(2)}</span></div>`;}).join('')}
         </div>`;
       }
-      // Day 2-5: top 4 random, no scores
-      if(day>=2){
-        var top4d=allR.slice(0,4);
+      // Top N: random order, no scores
+      if(_topPub){
+        // Per-category rankings (e.g., Interview)
+        if(ev.rankByCategory){
+          var _catR2=buildCatRankings(evName,ev);
+          if(_catR2){
+            _catR2=_catR2.filter(function(cr2){return APP.displayReleased&&APP.displayReleased[evName+'__'+cr2.cat];});
+            if(!_catR2.length) return '';
+            return _catR2.map(function(cr2){
+              var _cl3=cr2.cat.toLowerCase();
+              var _ts2=cr2.ranked.slice(0,cr2.topN);
+              for(var _si3=_ts2.length-1;_si3>0;_si3--){var _sj3=Math.floor(Math.random()*(_si3+1));var _tmp3=_ts2[_si3];_ts2[_si3]=_ts2[_sj3];_ts2[_sj3]=_tmp3;}
+              return '<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-'+_cl3+');display:inline-block;"></span>'+evName+' — '+catLabel(cr2.cat)+' <span style="font-size:0.68rem;color:rgba(255,255,255,0.45);font-weight:400;">Finalists (no particular order)</span></div>'+(!_ts2.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting…</div>':_ts2.map(function(c2){var _pp2=APP.contestantProfiles&&APP.contestantProfiles[c2.id]||{};return '<div class="proj-row"><span style="font-size:1rem;min-width:1.8rem;">⭐</span>'+(_pp2.photo?'<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="'+_pp2.photo+'" style="width:100%;height:100%;object-fit:cover;"></div>':'')+'<span class="proj-name" style="font-size:0.95rem;">'+(c2.org||c2.name)+'</span></div>';}).join(''))+'</div>';
+            }).join('');
+          }
+        }
+        var _tn2=getTopN(evName,ev.cat);
+        var top4d=allR.slice(0,_tn2);
         for(var si2=top4d.length-1;si2>0;si2--){var sj2=Math.floor(Math.random()*(si2+1));var tmp2=top4d[si2];top4d[si2]=top4d[sj2];top4d[sj2]=tmp2;}
-        return `<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-${cl});display:inline-block;"></span>${evName} <span style="font-size:0.68rem;color:rgba(255,255,255,0.45);font-weight:400;">Top 4 (random order)</span></div>
-          ${!top4d.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting\u2026</div>':top4d.map((c)=>`<div class="proj-row"><span style="font-size:1rem;min-width:1.8rem;">\u2b50</span><span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span></div>`).join('')}
+        return `<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-${cl});display:inline-block;"></span>${evName} <span style="font-size:0.68rem;color:rgba(255,255,255,0.45);font-weight:400;">Finalists (no particular order)</span></div>
+          ${!top4d.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting\u2026</div>':top4d.map((c)=>{const _ppD=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return `<div class="proj-row"><span style="font-size:1rem;min-width:1.8rem;">\u2b50</span>${_ppD.photo?`<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_ppD.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:''}<span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span></div>`;}).join('')}
         </div>`;
       }
       // Day 1: ranked with scores
       var ranked=allR;
       return `<div style="margin-bottom:1rem;"><div style="font-size:0.88rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-${cl});display:inline-block;"></span>${evName}</div>
-        ${!ranked.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting\u2026</div>':ranked.map((c,i)=>{var md=i<3?medals[i]:'<span style="display:inline-flex;width:1.4rem;height:1.4rem;border-radius:50%;background:#777;color:#fff;font-size:0.6rem;font-weight:700;align-items:center;justify-content:center;">'+(i+1)+'</span>';return `<div class="proj-row ${i===0?'t1':''}"><span style="font-size:1rem;min-width:1.8rem;">${md}</span><span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span><span class="proj-score" style="font-size:1.05rem;">${c.r.avg.toFixed(2)}</span></div>`;}).join('')}
+        ${!ranked.length?'<div style="font-size:0.82rem;color:var(--text-muted);">Awaiting\u2026</div>':ranked.map((c,i)=>{var md=i<3?medals[i]:'<span style="display:inline-flex;width:1.4rem;height:1.4rem;border-radius:50%;background:#777;color:#fff;font-size:0.6rem;font-weight:700;align-items:center;justify-content:center;">'+(i+1)+'</span>';return `<div class="proj-row ${i===0?'t1':''}"><span style="font-size:1rem;min-width:1.8rem;">${md}</span>${(()=>{const _ppR=APP.contestantProfiles&&APP.contestantProfiles[c.id]||{};return _ppR.photo?`<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;margin-right:0.35rem;"><img src="${_ppR.photo}" style="width:100%;height:100%;object-fit:cover;"></div>`:'';})()}<span class="proj-name" style="font-size:0.95rem;">${c.org||c.name}</span><span class="proj-score" style="font-size:1.05rem;">${c.r.avg.toFixed(2)}</span></div>`;}).join('')}
       </div>`;
     }).join('');
     if(!sections.trim()) return '';
@@ -3913,7 +4438,11 @@ function exportReport(day){
   let tables='';
   evs.forEach(evName=>{
     const ev=PD.events[evName],conts=evConts(ev),dayJ=APP.judges.filter(j=>j.events.includes(evName));
-    const sorted=conts.map(c=>({...c,r:calcFinal(evName,c.id)})).sort((a,b)=>{if(!a.r&&!b.r)return 0;if(!a.r)return 1;if(!b.r)return-1;return b.r.avg-a.r.avg;});
+    // For rankByCategory events, filter to each category separately
+    var _exportCats=ev.rankByCategory?PD.categories:[null];
+    _exportCats.forEach(function(_expCat){
+    var _filtConts=_expCat?conts.filter(function(c){return c._cat===_expCat;}):conts;
+    const sorted=_filtConts.map(c=>({...c,r:calcFinal(evName,c.id)})).sort((a,b)=>{if(!a.r&&!b.r)return 0;if(!a.r)return 1;if(!b.r)return-1;return b.r.avg-a.r.avg;});
     const rows=sorted.map((c,rank)=>{
       const r=c.r;
       const judgeCs=dayJ.map(j=>{const k=`${evName}__${c.id}__${j.id}`;const sc=APP.scores[k];return `<td style="text-align:center;padding:7px 8px;">${sc?sc.total:'—'}</td>`;}).join('');
@@ -3922,7 +4451,7 @@ function exportReport(day){
     }).join('');
     tables+=`<div style="margin-bottom:28px;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
       <div style="background:#111;color:#F0D98C;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:14px;font-weight:700;">${evName}</div>
+        <div style="font-size:14px;font-weight:700;">${evName}${_expCat?' — '+catLabel(_expCat):''}</div>
         <div style="font-size:11px;opacity:0.65;">${ev.cat} · Max ${ev.max} pts</div>
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;">
@@ -3936,7 +4465,8 @@ function exportReport(day){
       </table>
       <div style="background:#fafafa;padding:5px 14px;font-size:10px;color:#999;border-top:1px solid #eee;">Average = standard average of all judges who scored this event. No scores are dropped.</div>
     </div>`;
-  });
+    }); // close _exportCats
+  });;
   const html=buildReport(`${dayLabel(day)} — Score Report`,`${dayLabel(day)} Events: ${evs.join(' · ')}`,tables,now);
   dlHTML(`TriPageant2026_Day${day}.html`,html);toast(`${dayLabel(day)} report exported`,'success');
 }
@@ -3980,7 +4510,11 @@ function exportAvgReport(day){
     if(!ev)return;
     var conts=evConts(ev);
     var cl=ev.cat.toLowerCase();
-    var ranked=conts.map(function(c){
+    // For rankByCategory events, generate per-category tables
+    var _sExpCats=ev.rankByCategory?PD.categories:[null];
+    _sExpCats.forEach(function(_sCat){
+    var _sConts=_sCat?conts.filter(function(c){return c._cat===_sCat;}):conts;
+    var ranked=_sConts.map(function(c){
       var r=calcFinal(evName,c.id);
       return {number:c.number,name:c.name,org:c.org||'',avg:r?r.avg:null,judgeCount:r?r.scores.length:0};
     }).filter(function(c){return c.avg!==null;}).sort(function(a,b){return b.avg-a.avg;});
@@ -3991,7 +4525,7 @@ function exportAvgReport(day){
     }).join('');
     tables+='<div style="margin-bottom:24px;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">'
       +'<div style="background:#111;color:#F0D98C;padding:10px 14px;display:flex;justify-content:space-between;">'
-      +'<span style="font-size:14px;font-weight:700;">'+evName+'</span>'
+      +'<span style="font-size:14px;font-weight:700;">'+evName+(_sCat?' — '+catLabel(_sCat):'')+'</span>'
       +'<span style="font-size:11px;opacity:0.65;">'+ev.cat+' · Max '+ev.max+' pts</span></div>'
       +'<table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;">'
       +'<thead><tr style="background:#f0f0f0;">'
@@ -4001,6 +4535,7 @@ function exportAvgReport(day){
       +'</tr></thead><tbody>'+rows+'</tbody></table>'
       +'<div style="background:#fafafa;padding:5px 14px;font-size:10px;color:#999;border-top:1px solid #eee;">Average score based on judges who have submitted scores for this event.</div>'
       +'</div>';
+    }); // close _sExpCats forEach
   });
   if(!tables){toast('No scores available to export yet','error');return;}
   var html=buildReport(title+' — Average Score Report (Publication)',
@@ -4123,9 +4658,9 @@ function renderMCScreen(){
   if(!APP._mcTab)APP._mcTab='profiles';
   h+='<div class="tabs" style="margin-bottom:1rem;">';
   h+='<button class="tab '+(APP._mcTab==='profiles'?'active':'')+'" onclick="switchMCTab(\'profiles\',this)">\ud83d\udc64 Profiles & Bios</button>';
+  h+='<button class="tab '+(APP._mcTab==='sponsors'?'active':'')+'" onclick="switchMCTab(\'sponsors\',this)">\ud83c\udf1f Sponsors</button>';
   h+='<button class="tab '+(APP._mcTab==='results'?'active':'')+'" onclick="switchMCTab(\'results\',this)">\ud83c\udfc6 Results</button>';
   h+='<button class="tab '+(APP._mcTab==='finals'?'active':'')+'" onclick="switchMCTab(\'finals\',this)">\ud83d\udc51 Final Rankings</button>';
-  h+='<button class="tab '+(APP._mcTab==='sponsors'?'active':'')+'" onclick="switchMCTab(\'sponsors\',this)">\ud83c\udf1f Sponsors</button>';
   h+='</div>';
 
   // ═══ TAB A: PROFILES & BIOS ═══
@@ -4224,10 +4759,15 @@ function renderMCScreen(){
   // ═══ TAB B: RESULTS — Top 4 in random order, no scores (released by Head Judge) ═══
   else if(APP._mcTab==='results'){
     h+='<div class="section-title">\ud83c\udfc6 Event Results</div>';
-    h+='<div class="card" style="background:rgba(91,142,230,0.08);border-color:rgba(91,142,230,0.3);margin-bottom:1rem;"><div style="font-size:0.85rem;color:#5B8EE6;">\ud83d\udce2 Top 4 finalists per event (random order, no scores). Released by Head Judge after auditor approval. After announcing, press <strong>Publish to Display</strong> to show on the public screen.</div></div>';
+    h+='<div class="card" style="background:rgba(91,142,230,0.08);border-color:rgba(91,142,230,0.3);margin-bottom:1rem;"><div style="font-size:0.85rem;color:#5B8EE6;">\ud83d\udce2 Finalists per event (in no particular order, no scores). Released by Head Judge after auditor approval. After announcing, press <strong>Publish to Display</strong> to show on the public screen.</div></div>';
     var anyResults=false;
     for(var d2=1;d2<=5;d2++){
       var dayEvs=PD.days[d2].events.filter(function(evN){
+        var _ev=PD.events[evN];
+        if(_ev&&_ev.rankByCategory){
+          // Any category released counts
+          return PD.categories.some(function(cat){return APP.hjReleasedToMC&&APP.hjReleasedToMC['top4:'+evN+'__'+cat];});
+        }
         return APP.hjReleasedToMC&&APP.hjReleasedToMC['top4:'+evN];
       });
       if(!dayEvs.length)continue;
@@ -4238,36 +4778,40 @@ function renderMCScreen(){
         var cl=ev.cat.toLowerCase();
         var conts=evConts(ev);
         var ranked=conts.map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;});
-        var isFloatParade=(evName==='Float Parade');
+        
         h+='<div class="card" style="border-left:3px solid var(--accent-'+cl+');">';
-        h+='<div class="card-title">'+evName+' <span class="badge bg-'+cl+'">'+catLabel(ev.cat)+'</span></div>';
-        if(isFloatParade){
-          // Float Parade: full rankings with scores
-          if(!ranked.length){h+='<div style="font-size:0.85rem;color:var(--text-muted);">Results pending.</div>';}
-          else{
-            var rankMedals=['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
-            ranked.forEach(function(c,i){
-              var prof=(APP.contestantProfiles&&APP.contestantProfiles[c.id])||{};
-              var rc=['#D4A012','#9E9E9E','#CD7F32'];
-              var rbg=i<3?['rgba(212,160,18,0.06)','rgba(192,192,192,0.04)','rgba(205,127,50,0.04)'][i]:'transparent';
-              h+='<div style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.4rem;background:'+rbg+';border-bottom:1px solid var(--border2);border-radius:4px;margin-bottom:2px;">';
-              h+='<div style="width:26px;height:26px;border-radius:50%;background:'+(i<3?rc[i]:'#777')+';color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</div>';
-              h+='<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--border);background:var(--parch2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">';
-              h+=prof.photo?'<img src="'+prof.photo+'" style="width:100%;height:100%;object-fit:cover;">':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-              h+='</div>';
-              h+='<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:0.85rem;">#'+c.number+' '+(c.org||c.name)+'</div>';
-              h+='<div style="font-size:0.72rem;color:var(--text3);">'+c.name+'</div></div>';
-              h+='<div style="font-size:1.05rem;font-weight:700;flex-shrink:0;">'+c.r.avg.toFixed(2)+'</div>';
-              h+='</div>';
-            });
-          }
-        }else{
-          // All other events: top 4 random order, no scores
-          var top4=ranked.slice(0,4);
+        h+='<div class="card-title">'+evName+' <span class="badge bg-'+cl+'">'+(ev.allCats?'All Categories':catLabel(ev.cat))+'</span></div>';
+        {
+          // All events: top N random order, no scores
+          // Per-category rankings (e.g., Interview)
+          if(ev.rankByCategory){
+            var _catRMC=buildCatRankings(evName,ev);
+            if(_catRMC){
+              // Only show categories released by Head Judge
+              _catRMC=_catRMC.filter(function(crMC){return APP.hjReleasedToMC&&APP.hjReleasedToMC['top4:'+evName+'__'+crMC.cat];});
+              _catRMC.forEach(function(crMC){
+                var clMC=crMC.cat.toLowerCase();
+                var tsMC=crMC.ranked.slice(0,crMC.topN);
+                for(var siMC=tsMC.length-1;siMC>0;siMC--){var sjMC=Math.floor(Math.random()*(siMC+1));var tmpMC=tsMC[siMC];tsMC[siMC]=tsMC[sjMC];tsMC[sjMC]=tmpMC;}
+                h+='<div style="margin:0.6rem 0;padding:0.5rem;background:var(--parch);border-radius:var(--radius);border-left:3px solid var(--accent-'+clMC+');">';
+                h+='<div style="font-size:0.82rem;font-weight:700;color:var(--accent-'+clMC+');margin-bottom:0.4rem;">'+catLabel(crMC.cat)+' — Finalists (in no particular order)</div>';
+                tsMC.forEach(function(cMC){
+                  var profMC=(APP.contestantProfiles&&APP.contestantProfiles[cMC.id])||{};
+                  h+='<div style="display:flex;gap:0.6rem;padding:0.4rem;background:var(--deep2);border-radius:var(--radius);margin-bottom:0.3rem;align-items:center;">';
+                  h+='<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--accent-'+clMC+');background:var(--parch2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">';
+                  h+=profMC.photo?'<img src="'+profMC.photo+'" style="width:100%;height:100%;object-fit:cover;">':"⭐";
+                  h+='</div><div style="flex:1;"><div style="font-weight:700;font-size:0.85rem;">⭐ #'+cMC.number+' '+(cMC.org||cMC.name)+'</div>';
+                  h+='<div style="font-size:0.72rem;color:var(--text3);">'+cMC.name+'</div></div></div>';
+                });
+                h+='</div>';
+              });
+            }
+          } else {
+          var _tnMC=getTopN(evName,ev.cat);var top4=ranked.slice(0,_tnMC);
           for(var si=top4.length-1;si>0;si--){var sj=Math.floor(Math.random()*(si+1));var tmp=top4[si];top4[si]=top4[sj];top4[sj]=tmp;}
           if(!top4.length){h+='<div style="font-size:0.85rem;color:var(--text-muted);">Results pending.</div>';}
           else{
-            h+='<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Top 4 finalists (in no particular order):</div>';
+            h+='<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Finalists (in no particular order):</div>';
             top4.forEach(function(c){
               var prof=(APP.contestantProfiles&&APP.contestantProfiles[c.id])||{};
               h+='<div style="display:flex;gap:0.6rem;padding:0.5rem;background:var(--deep2);border-radius:var(--radius);margin-bottom:0.4rem;align-items:center;">';
@@ -4279,8 +4823,27 @@ function renderMCScreen(){
               h+='</div></div>';
             });
           }
+          } // close else for rankByCategory
         }
-        // Publish to Display button
+        // Publish to Display button(s)
+        if(ev.rankByCategory){
+          // Per-category publish buttons — only for categories released by HJ
+          h+='<div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">';
+          PD.categories.forEach(function(_pCat){
+            var _pCl=_pCat.toLowerCase();
+            var _pKey=evName+'__'+_pCat;
+            var _pHJRel=APP.hjReleasedToMC&&APP.hjReleasedToMC['top4:'+evName+'__'+_pCat];
+            if(!_pHJRel) return; // skip if not released by HJ
+            var _pRel=APP.displayReleased&&APP.displayReleased[_pKey];
+            if(!_pRel){
+              h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.25rem 0.6rem;border-left:3px solid var(--accent-'+_pCl+');" onclick="mcPublishToDisplay(\''+_pKey.replace(/'/g,"\\'")+'\')">\ud83d\udcfa '+catLabel(_pCat)+'</button>';
+            } else {
+              h+='<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);padding:0.2rem 0.5rem;font-size:0.68rem;border-left:3px solid var(--accent-'+_pCl+');">'+catLabel(_pCat)+' \u2705</span>';
+              h+='<button class="btn-secondary" style="font-size:0.6rem;padding:0.12rem 0.3rem;" onclick="mcRetractFromDisplay(\''+_pKey.replace(/'/g,"\\'")+'\')">\u21a9</button>';
+            }
+          });
+          h+='</div>';
+        } else {
         var evDispRel=APP.displayReleased&&APP.displayReleased[evName];
         if(!evDispRel){
           h+='<div style="margin-top:0.5rem;"><button class="btn-primary" style="font-size:0.78rem;padding:0.3rem 0.85rem;" onclick="mcPublishToDisplay(\''+evName.replace(/'/g,"\\'")+'\')">\ud83d\udcfa Publish to Display</button></div>';
@@ -4288,11 +4851,12 @@ function renderMCScreen(){
           h+='<div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.4rem;"><span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);padding:0.2rem 0.5rem;font-size:0.72rem;">\u2705 Published to Display</span>';
           h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="mcRetractFromDisplay(\''+evName.replace(/'/g,"\\'")+'\')">\u21a9</button></div>';
         }
+        }
         h+='</div>';
       });
     }
     if(!anyResults){
-      h+='<div class="card"><div class="empty-state"><div class="icon">\u23f3</div>Waiting for Head Judge to release event results.<br><span style="font-size:0.82rem;color:var(--text3);">Top 4 finalists will appear here once released.</span></div></div>';
+      h+='<div class="card"><div class="empty-state"><div class="icon">\u23f3</div>Waiting for Head Judge to release event results.<br><span style="font-size:0.82rem;color:var(--text3);">Finalists will appear here once released.</span></div></div>';
     }
   }
 
@@ -4307,14 +4871,42 @@ function renderMCScreen(){
     Object.entries(PD.events).forEach(function(entry){
       var evName=entry[0],ev=entry[1];
       var evDay=getEventDay(evName);
-      var showThis=APP.hjReleasedToMC&&APP.hjReleasedToMC['ev:'+evName];
+      var showThis=ev.rankByCategory?PD.categories.some(function(cat){return APP.hjReleasedToMC&&APP.hjReleasedToMC['ev:'+evName+'__'+cat];}):APP.hjReleasedToMC&&APP.hjReleasedToMC['ev:'+evName];
       if(!showThis)return;
       anyEventFinals=true;
       var cl=ev.cat.toLowerCase();
       var conts=evConts(ev);
       var ranked=conts.map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;});
       h+='<div class="card" style="border-left:3px solid var(--accent-'+cl+');">';
-      h+='<div class="card-title">'+evName+' <span class="badge bg-'+cl+'">'+catLabel(ev.cat)+'</span></div>';
+      h+='<div class="card-title">'+evName+' <span class="badge bg-'+cl+'">'+(ev.allCats?'All Categories':catLabel(ev.cat))+'</span></div>';
+      // Per-category rankings for Interview
+      if(ev.rankByCategory){
+        var _catRF=buildCatRankings(evName,ev);
+        if(_catRF){
+        // Only show categories released by Head Judge
+        _catRF=_catRF.filter(function(crF){return APP.hjReleasedToMC&&APP.hjReleasedToMC['ev:'+evName+'__'+crF.cat];});
+        _catRF.forEach(function(crF){
+          var _clF=crF.cat.toLowerCase();
+          h+='<div style="margin-bottom:0.8rem;padding:0.5rem;border-left:3px solid var(--accent-'+_clF+');background:var(--parch);border-radius:var(--radius);">';
+          h+='<div style="font-weight:700;font-size:0.88rem;color:var(--accent-'+_clF+');margin-bottom:0.4rem;">'+catLabel(crF.cat)+'</div>';
+          crF.ranked.forEach(function(cF,iF){
+            var rcF=['#D4A012','#9E9E9E','#CD7F32'];
+            var rbF=iF<3?['rgba(212,160,18,0.06)','rgba(192,192,192,0.04)','rgba(205,127,50,0.04)'][iF]:'transparent';
+            var cpF=(APP.contestantProfiles&&APP.contestantProfiles[cF.id])||{};
+            h+='<div style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0.4rem;background:'+rbF+';border-bottom:1px solid var(--border2);border-radius:4px;margin-bottom:2px;">';
+            h+='<div style="width:26px;height:26px;border-radius:50%;background:'+(iF<3?rcF[iF]:'#777')+';color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(iF+1)+'</div>';
+            h+='<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--border);background:var(--parch2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">';
+            h+=cpF.photo?'<img src="'+cpF.photo+'" style="width:100%;height:100%;object-fit:cover;">':'';
+            h+='</div>';
+            h+='<div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:0.85rem;">#'+cF.number+' '+(cF.org||cF.name)+'</div>';
+            h+='<div style="font-size:0.72rem;color:var(--text3);">'+cF.name+'</div></div>';
+            h+='<div style="font-size:1.05rem;font-weight:700;flex-shrink:0;">'+cF.r.avg.toFixed(2)+'</div>';
+            h+='</div>';
+          });
+          h+='</div>';
+        });}
+        ranked=[]; // skip default display
+      }
       ranked.forEach(function(c,i){
         var medals=['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
         var rankColors=['#D4A012','#9E9E9E','#CD7F32'];
@@ -4330,7 +4922,23 @@ function renderMCScreen(){
         h+='<div style="font-size:1.05rem;font-weight:700;flex-shrink:0;">'+c.r.avg.toFixed(2)+'</div>';
         h+='</div>';
       });
-      // Publish to Display button
+      // Publish to Display button(s)
+      if(ev.rankByCategory){
+        h+='<div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">';
+        PD.categories.forEach(function(_fpCat){
+          var _fpCl=_fpCat.toLowerCase();
+          var _fpKey='fev:'+evName+'__'+_fpCat;
+          var _fpHJRel=APP.hjReleasedToMC&&APP.hjReleasedToMC['ev:'+evName+'__'+_fpCat];
+          if(!_fpHJRel) return; // skip if not released by HJ
+          var _fpPub=APP.finalsPublished&&APP.finalsPublished[_fpKey];
+          if(!_fpPub){
+            h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.25rem 0.6rem;border-left:3px solid var(--accent-'+_fpCl+');" onclick="mcPublishFinal(\''+_fpKey.replace(/'/g,"\\'")+'\',\''+evName.replace(/'/g,"\\'")+" — "+catLabel(_fpCat)+'\')">\ud83d\udcfa '+catLabel(_fpCat)+'</button>';
+          } else {
+            h+='<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);padding:0.2rem 0.5rem;font-size:0.68rem;border-left:3px solid var(--accent-'+_fpCl+');">'+catLabel(_fpCat)+' \u2705</span>';
+          }
+        });
+        h+='</div>';
+      } else {
       var fpKey='fev:'+evName;
       var fPub=APP.finalsPublished&&APP.finalsPublished[fpKey];
       if(!fPub){
@@ -4339,6 +4947,7 @@ function renderMCScreen(){
         h+='<div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.4rem;"><span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);padding:0.2rem 0.5rem;font-size:0.72rem;">\u2705 Published</span>';
         h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="mcRetractFinal(\''+fpKey.replace(/'/g,"\\'")+'\')">\u21a9</button></div>';
       }
+      } // close else for rankByCategory
       h+='</div>';
     });
     if(!anyEventFinals){h+='<div class="card"><div style="font-size:0.85rem;color:var(--text-muted);">\u23f3 No event rankings approved yet.</div></div>';}
@@ -4443,26 +5052,30 @@ function switchMCTab(tab,btn){
   if(btn){btn.parentElement.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});btn.classList.add('active');}
   renderMCScreen();
 }
-function mcPublishToDisplay(evName){
+function mcPublishToDisplay(evKey){
   if(!APP.displayReleased)APP.displayReleased={};
-  APP.displayReleased[evName]=true;
+  APP.displayReleased[evKey]=true;
   if(!APP.displaySettings)APP.displaySettings={showEventScores:true,showCategoryOverall:true,showAwards:true,enabledEvents:{},revealedCategories:{}};
   if(!APP.displaySettings.enabledEvents)APP.displaySettings.enabledEvents={};
-  APP.displaySettings.enabledEvents[evName]=true;
+  APP.displaySettings.enabledEvents[evKey]=true;
   saveStateLocal();
   queueAppStateSync();
   renderMCScreen();
-  toast('\ud83d\udcfa "'+evName+'" published to display!','success');
+  var parts=evKey.split('__');
+  var label=parts.length>1?parts[0]+' — '+catLabel(parts[1]):evKey;
+  toast('\ud83d\udcfa "'+label+'" published to display!','success');
   var pp=document.getElementById('screen-projector');
   if(pp&&pp.classList.contains('active')){renderProjector();triggerConfetti();}
 }
-function mcRetractFromDisplay(evName){
-  if(APP.displayReleased)delete APP.displayReleased[evName];
-  if(APP.displaySettings&&APP.displaySettings.enabledEvents)APP.displaySettings.enabledEvents[evName]=false;
+function mcRetractFromDisplay(evKey){
+  if(APP.displayReleased)delete APP.displayReleased[evKey];
+  if(APP.displaySettings&&APP.displaySettings.enabledEvents)APP.displaySettings.enabledEvents[evKey]=false;
   saveStateLocal();
   queueAppStateSync();
   renderMCScreen();
-  toast('"'+evName+'" removed from display','info');
+  var _rParts=evKey.split('__');
+  var _rLabel=_rParts.length>1?_rParts[0]+' — '+catLabel(_rParts[1]):evKey;
+  toast('"'+_rLabel+'" removed from display','info');
 }
 function mcPublishFinal(fpKey,label){
   if(!APP.finalsPublished)APP.finalsPublished={};
@@ -5020,7 +5633,7 @@ function initTestScores(){
     APP.awards=[
       {name:'Miss Congeniality',winner:'Lani Taufa (KAT1 - Tonga Red Cross)'},
       {name:'Miss Popularity',winner:'Heilala Taufa (GAL1 - Air New Zealand)'},
-      {name:'Miss Photogenic',winner:'Losa Fifita (GAL3 - Real Tonga Airlines)'}
+      {name:'Miss Photogenic',winner:'TBD'}
     ];
   }
   
@@ -5055,28 +5668,37 @@ function manualLockEvent(evName){
   toast('🔒 "'+evName+'" locked for review','success');
 }
 
-function approveEvent(evName){
+function approveEvent(evKey){
+  // Handle per-category keys like "Interview__Katinia"
+  var parts=evKey.split('__');
+  var evName=parts[0];
+  var catFilter=parts.length>1?parts[1]:null;
   // Validate all scores are complete
   var ev=PD.events[evName];if(!ev)return;
-  var co=evConts(ev),dj=APP.judges.filter(function(j){return j.events&&j.events.includes(evName);});
+  var co=evConts(ev);
+  if(catFilter){co=co.filter(function(c){return c._cat===catFilter;});}
+  var dj=APP.judges.filter(function(j){return j.events&&j.events.includes(evName);});
   var te=dj.length*co.length,su=0;
   dj.forEach(function(j){co.forEach(function(c){if(APP.scores[evName+'__'+c.id+'__'+j.id])su++;});});
   if(te===0||su<te){toast('⚠️ Cannot approve — not all scores submitted ('+su+'/'+te+')','error');return;}
   // Auto-lock the event when approving
   if(!APP.lockedEvents)APP.lockedEvents={};
-  APP.lockedEvents[evName]=true;
+  APP.lockedEvents[evKey]=true;
   if(!APP.readyForMC)APP.readyForMC={};
-  APP.readyForMC[evName]=true;
+  APP.readyForMC[evKey]=true;
   saveState();
   auditorTab('rankings',null);
-  toast('✅ "'+evName+'" approved — Publish button is now active','success');
+  var label=catFilter?evName+' — '+catLabel(catFilter):evName;
+  toast('✅ "'+label+'" approved','success');
 }
-function unapproveEvent(evName){
-  if(APP.readyForMC)delete APP.readyForMC[evName];
-  if(APP.lockedEvents)delete APP.lockedEvents[evName];
+function unapproveEvent(evKey){
+  if(APP.readyForMC)delete APP.readyForMC[evKey];
+  if(APP.lockedEvents)delete APP.lockedEvents[evKey];
   saveState();
   auditorTab('rankings',null);
-  toast('"'+evName+'" approval withdrawn','info');
+  var parts=evKey.split('__');
+  var label=parts.length>1?parts[0]+' — '+catLabel(parts[1]):evKey;
+  toast('"'+label+'" approval withdrawn','info');
 }
 function markReadyForMC(evName){
   if(!APP.readyForMC)APP.readyForMC={};
@@ -5168,7 +5790,13 @@ function verifyAndSubmitToHJ(){
     // Validate all events approved
     var unapprovedEvs=[];
     Object.keys(PD.events).forEach(function(evN){
-      if(!APP.readyForMC||!APP.readyForMC[evN])unapprovedEvs.push(evN);
+      var _evV=PD.events[evN];
+      if(_evV&&_evV.rankByCategory){
+        var _allOK=PD.categories.every(function(cat){return APP.readyForMC&&APP.readyForMC[evN+'__'+cat];});
+        if(!_allOK)unapprovedEvs.push(evN);
+      } else {
+        if(!APP.readyForMC||!APP.readyForMC[evN])unapprovedEvs.push(evN);
+      }
     });
     if(unapprovedEvs.length){
       toast('Cannot submit \u2014 unapproved events: '+unapprovedEvs.slice(0,3).join(', '),'error');return;
@@ -5252,9 +5880,28 @@ function renderHeadJudgeFullPanel(){
         dayJudges.forEach(function(j){conts.forEach(function(c){if(APP.scores[evName+'__'+c.id+'__'+j.id])submitted++;});});
         var pct=totalExp>0?Math.round(submitted/totalExp*100):0;
         h+='<div style="margin-bottom:0.8rem;padding:0.5rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-'+cl+');">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;"><span style="font-weight:700;font-size:0.88rem;">'+evName+' <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+catLabel(ev.cat)+'</span></span>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;"><span style="font-weight:700;font-size:0.88rem;">'+evName+' <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+(ev.allCats?'All Categories':catLabel(ev.cat))+'</span></span>';
         h+='<span style="font-size:0.72rem;color:'+(pct===100?'var(--green)':'var(--gold)')+';">'+submitted+'/'+totalExp+' ('+pct+'%)</span></div>';
         h+='<div class="bar-track" style="margin-bottom:0.4rem;"><div class="bar-fill" style="width:'+pct+'%;background:'+(pct===100?'var(--green)':'var(--gold)')+'"></div></div>';
+        // Per-category for Interview
+        if(ev.rankByCategory){
+          var _catHJA=buildCatRankings(evName,ev);
+          if(_catHJA){_catHJA.forEach(function(crH){
+            var _clH=crH.cat.toLowerCase();
+            h+='<div style="margin:0.4rem 0;padding:0.4rem;border-left:3px solid var(--accent-'+_clH+');background:var(--parch);border-radius:var(--radius);">';
+            h+='<div style="font-weight:700;font-size:0.82rem;color:var(--accent-'+_clH+');margin-bottom:0.3rem;">'+catLabel(crH.cat)+'</div>';
+            crH.ranked.forEach(function(cH,iH){
+              var rcH=['#D4A012','#9E9E9E','#CD7F32'];
+              var cpH=APP.contestantProfiles&&APP.contestantProfiles[cH.id]||{};
+              h+='<div style="display:flex;align-items:center;gap:0.4rem;padding:0.2rem 0;border-bottom:1px solid var(--border2);font-size:0.82rem;">';
+              h+='<div style="width:20px;height:20px;border-radius:50%;background:'+(iH<3?rcH[iH]:'#777')+';color:#fff;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;">'+(iH+1)+'</div>';
+              h+='<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:1.5px solid var(--border);background:var(--parch2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(cpH.photo?'<img src="'+cpH.photo+'" style="width:100%;height:100%;object-fit:cover;">':'')+'</div>';
+              h+='<span style="flex:1;font-weight:'+(iH<3?700:400)+';">#'+cH.number+' '+(cH.org||cH.name)+'</span>';
+              h+='<span style="font-weight:700;">'+cH.r.avg.toFixed(2)+'</span></div>';
+            });
+            h+='</div>';
+          });}
+        } else {
         if(!ranked.length){h+='<div style="font-size:0.82rem;color:var(--text-muted);">No scores yet</div>';}
         else{ranked.forEach(function(c,i){
           var rc=['#D4A012','#9E9E9E','#CD7F32'];
@@ -5265,6 +5912,7 @@ function renderHeadJudgeFullPanel(){
           h+='<span style="flex:1;font-weight:'+(i<3?700:400)+';">#'+c.number+' '+(c.org||c.name)+'</span>';
           h+='<span style="font-weight:700;">'+c.r.avg.toFixed(2)+'</span></div>';
         });}
+        } // close else for rankByCategory
         h+='</div>';
       });
       h+='</div>';
@@ -5289,13 +5937,13 @@ function renderHeadJudgeFullPanel(){
     h+='</div>';
   }
 
-  // ═══ TAB: EVENT RELEASE (Top 4 / Day 1 Full Rankings) ═══
+  // ═══ TAB: EVENT RELEASE (Event Results Release) ═══
   else if(tab==='top4release'){
     h+='<div class="section-title">\ud83c\udfa4 Release Event Results to MC</div>';
-    h+='<div class="card" style="background:rgba(91,142,230,0.06);border-color:rgba(91,142,230,0.25);margin-bottom:1rem;"><div style="font-size:0.85rem;color:#5B8EE6;line-height:1.6;"><strong>Day 1 (Float Parade):</strong> Full rankings with scores (announced same day)<br><strong>Day 2\u20135 events:</strong> Top 4 finalists in random order (no scores)<br><strong>Day 3\u20135 events:</strong> Top 4 finalists in random order (no scores)<br>Auditor must approve each event first. Then you release to MC.</div></div>';
+    h+='<div class="card" style="background:rgba(91,142,230,0.06);border-color:rgba(91,142,230,0.25);margin-bottom:1rem;"><div style="font-size:0.85rem;color:#5B8EE6;line-height:1.6;">All events: Top finalists in no particular order (no scores shown).<br>Number of finalists varies by event.<br>Auditor must approve each event first. Then you release to MC.</div></div>';
     // Day 1 & Day 2 — Full rankings
     for(var dFull=1;dFull<=1;dFull++){
-    h+='<div class="card"><div class="card-title">'+dayLabel(dFull)+' \u2014 Full Rankings</div>';
+    h+='<div class="card"><div class="card-title">'+dayLabel(dFull)+' \u2014 Finalists</div>';
     PD.days[dFull].events.forEach(function(evName){
       var ev=PD.events[evName];if(!ev)return;
       var cl=ev.cat.toLowerCase();
@@ -5310,7 +5958,7 @@ function renderHeadJudgeFullPanel(){
       if(!approved){h+='<span style="font-size:0.72rem;color:var(--text-muted);">\u23f3 Awaiting auditor</span>';}
       else if(!hjRel){
         h+='<span class="badge" style="background:rgba(212,160,18,0.15);color:var(--gold);font-size:0.65rem;">\u2705 Approved</span> ';
-        h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',' + "'"+evName.replace(/'/g,"\\'")+" Full Rankings')"+'">' + '\ud83c\udfa4 Release to MC</button>';
+        h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',' + "'"+evName.replace(/'/g,"\\'")+" Finalists')"+'">' + '\ud83c\udfa4 Release to MC</button>';
       }else{
         h+='<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\u2705 Released</span> ';
         h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="hjRetractFromMC(\''+hjKey.replace(/'/g,"\\'")+'\')">' + '\u21a9</button>';
@@ -5326,31 +5974,75 @@ function renderHeadJudgeFullPanel(){
     });
     h+='</div>';
     } // end dFull loop (Day 1 & 2)
-    // Day 2-5 — Top 4 release
+    // Day 2-5 — Event results release
     for(var d2=2;d2<=5;d2++){
       var d2Evs=PD.days[d2].events;
-      h+='<div class="card"><div class="card-title">'+dayLabel(d2)+' \u2014 Top 4 Finalists</div>';
+      h+='<div class="card"><div class="card-title">'+dayLabel(d2)+' \u2014 Finalists</div>';
       d2Evs.forEach(function(evName){
         var ev=PD.events[evName];if(!ev)return;
         var cl=ev.cat.toLowerCase();
+        // Per-category release for Interview
+        if(ev.rankByCategory){
+          var _catRHJR=buildCatRankings(evName,ev);
+          if(_catRHJR){_catRHJR.forEach(function(crHJR){
+            var _clHJR=crHJR.cat.toLowerCase();
+            var _hjKeyC='top4:'+evName+'__'+crHJR.cat;
+            var _approvedC=APP.readyForMC&&APP.readyForMC[evName+'__'+crHJR.cat];
+            var _hjRelC=APP.hjReleasedToMC&&APP.hjReleasedToMC[_hjKeyC];
+            var _tnC=crHJR.topN;
+            var _topC=crHJR.ranked.slice(0,_tnC);
+            h+='<div style="padding:0.5rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-'+_clHJR+');margin-bottom:0.5rem;">';
+            h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem;">';
+            h+='<span style="font-weight:600;font-size:0.85rem;">'+evName+' <span class="badge bg-'+_clHJR+'" style="font-size:0.65rem;">'+catLabel(crHJR.cat)+'</span> <span style="font-size:0.7rem;color:var(--text-muted);">Top '+_tnC+'</span></span>';
+            h+='<div style="display:flex;gap:0.3rem;align-items:center;">';
+            if(!_approvedC){h+='<span style="font-size:0.72rem;color:var(--text-muted);">\u23f3 Awaiting auditor</span>';}
+            else if(!_hjRelC){
+              h+='<span class="badge" style="background:rgba(212,160,18,0.15);color:var(--gold);font-size:0.65rem;">\u2705 Approved</span> ';
+              h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+_hjKeyC.replace(/'/g,"\\'")+'\',\''+evName+' '+catLabel(crHJR.cat)+'\')">\ud83c\udfa4 Release</button>';
+            }else{
+              h+='<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\u2705 Released</span> ';
+              h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="hjRetractFromMC(\''+_hjKeyC.replace(/'/g,"\\'")+'\')">\u21a9</button>';
+            }
+            h+='</div></div>';
+            if(_approvedC&&_topC.length){_topC.forEach(function(cC){h+='<div style="font-size:0.8rem;padding:0.12rem 0.3rem;">\u2b50 '+(cC.org||cC.name)+'</div>';});}
+            h+='</div>';
+          });}
+          return; // skip default display
+        }
         var approved=APP.readyForMC&&APP.readyForMC[evName];
         var hjKey='top4:'+evName;
         var hjRel=APP.hjReleasedToMC&&APP.hjReleasedToMC[hjKey];
-        var ranked=evConts(ev).map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;}).slice(0,4);
+        var _tnHJ=getTopN(evName,ev.cat);
+        var ranked=evConts(ev).map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;}).slice(0,_tnHJ);
         h+='<div style="padding:0.5rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-'+cl+');margin-bottom:0.5rem;">';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem;">';
-        h+='<span style="font-weight:600;font-size:0.85rem;">'+evName+' <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+catLabel(ev.cat)+'</span></span>';
+        h+='<span style="font-weight:600;font-size:0.85rem;">'+evName+' <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+(ev.allCats?'All Categories':catLabel(ev.cat))+'</span></span>';
         h+='<div style="display:flex;gap:0.3rem;align-items:center;">';
         if(!approved){h+='<span style="font-size:0.72rem;color:var(--text-muted);">\u23f3 Awaiting auditor</span>';}
         else if(!hjRel){
           h+='<span class="badge" style="background:rgba(212,160,18,0.15);color:var(--gold);font-size:0.65rem;">\u2705 Approved</span> ';
-          h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',' + "'"+evName.replace(/'/g,"\\'")+" Top 4')"+'">' + '\ud83c\udfa4 Release Top 4</button>';
+          h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',' + "'"+evName.replace(/'/g,"\\'")+" Top 4')"+'">' + '\ud83c\udfa4 Release Results</button>';
         }else{
           h+='<span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\u2705 Released</span> ';
           h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="hjRetractFromMC(\''+hjKey.replace(/'/g,"\\'")+'\')">' + '\u21a9</button>';
         }
         h+='</div></div>';
-        if(approved&&ranked.length){ranked.forEach(function(c){h+='<div style="font-size:0.8rem;padding:0.12rem 0.3rem;">\u2b50 '+(c.org||c.name)+'</div>';});}
+        if(approved&&ranked.length){
+          if(ev.rankByCategory){
+            var _catHJR=buildCatRankings(evName,ev);
+            if(_catHJR){_catHJR.forEach(function(crR){
+              var _clR=crR.cat.toLowerCase();
+              var _tnR=crR.topN;
+              var _topR=crR.ranked.slice(0,_tnR);
+              h+='<div style="margin:0.3rem 0;padding:0.3rem;border-left:2px solid var(--accent-'+_clR+');">';
+              h+='<div style="font-size:0.75rem;font-weight:700;color:var(--accent-'+_clR+');margin-bottom:0.2rem;">'+catLabel(crR.cat)+' (Top '+_tnR+')</div>';
+              _topR.forEach(function(cR){h+='<div style="font-size:0.8rem;padding:0.12rem 0.3rem;">\u2b50 '+(cR.org||cR.name)+'</div>';});
+              h+='</div>';
+            });}
+          } else {
+            ranked.forEach(function(c){h+='<div style="font-size:0.8rem;padding:0.12rem 0.3rem;">\u2b50 '+(c.org||c.name)+'</div>';});
+          }
+        }
         h+='</div>';
       });
       h+='</div>';
@@ -5374,13 +6066,33 @@ function renderHeadJudgeFullPanel(){
           var hjKey='ev:'+evName;
           var hjRel=APP.hjReleasedToMC&&APP.hjReleasedToMC[hjKey];
           var ranked=evConts(ev).map(function(c){return Object.assign({},c,{r:calcFinal(evName,c.id)});}).filter(function(c){return c.r;}).sort(function(a,b){return b.r.avg-a.r.avg;});
-          h+='<div style="padding:0.5rem;margin-bottom:0.4rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-'+cl+');display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.3rem;">';
-          h+='<div><span style="font-weight:600;font-size:0.85rem;">'+evName+'</span> <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+catLabel(ev.cat)+'</span> <span style="font-size:0.72rem;color:var(--text-muted);">'+ranked.length+' ranked</span></div>';
+          var _rankCount=ranked.length;
+          // For per-category events, show count per category
+          if(ev.rankByCategory){var _crHJ=buildCatRankings(evName,ev);_rankCount=_crHJ?_crHJ.reduce(function(a,b){return a+b.ranked.length;},0):ranked.length;}
+                    h+='<div style="padding:0.5rem;margin-bottom:0.4rem;background:var(--deep2);border-radius:var(--radius);border-left:3px solid var(--accent-'+cl+');">';
+          h+='<div style="font-weight:600;font-size:0.85rem;margin-bottom:0.3rem;">'+evName+' <span class="badge bg-'+cl+'" style="font-size:0.65rem;">'+(ev.rankByCategory?'By Category':(ev.allCats?'All Categories':catLabel(ev.cat)))+'</span> <span style="font-size:0.72rem;color:var(--text-muted);">'+_rankCount+' ranked</span></div>';
+          if(ev.rankByCategory){
+            PD.categories.forEach(function(_fCat){
+              var _fCl=_fCat.toLowerCase();
+              var _fKey='ev:'+evName+'__'+_fCat;
+              var _fRel=APP.hjReleasedToMC&&APP.hjReleasedToMC[_fKey];
+              h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:0.3rem;margin-bottom:0.2rem;border-left:3px solid var(--accent-'+_fCl+');background:var(--parch);border-radius:var(--radius);">';
+              h+='<span style="font-size:0.82rem;font-weight:600;color:var(--accent-'+_fCl+');">'+catLabel(_fCat)+'</span>';
+              if(!_fRel){
+                h+='<button class="btn-primary" style="font-size:0.7rem;padding:0.2rem 0.5rem;" onclick="hjReleaseToMC(\''+_fKey.replace(/'/g,"\\'")+'\',\''+evName.replace(/'/g,"\\'")+'  — '+catLabel(_fCat)+'\')">🎤 Release</button>';
+              }else{
+                h+='<div style="display:flex;gap:0.3rem;align-items:center;"><span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.65rem;">✅ Released</span>';
+                h+='<button class="btn-secondary" style="font-size:0.6rem;padding:0.12rem 0.3rem;" onclick="hjRetractFromMC(\''+_fKey.replace(/'/g,"\\'")+'\')">↩</button></div>';
+              }
+              h+='</div>';
+            });
+          } else {
           if(!hjRel){
-            h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',' + "'"+evName.replace(/'/g,"\\'")+"')"+'">' + '\ud83c\udfa4 Release to MC</button>';
+            h+='<button class="btn-primary" style="font-size:0.72rem;padding:0.22rem 0.6rem;" onclick="hjReleaseToMC(\''+hjKey.replace(/'/g,"\\'")+'\',\''+evName.replace(/'/g,"\\'")+'\')">🎤 Release to MC</button>';
           }else{
-            h+='<div style="display:flex;gap:0.3rem;align-items:center;"><span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">\u2705 Released</span>';
-            h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="hjRetractFromMC(\''+hjKey.replace(/'/g,"\\'")+'\')">' + '\u21a9</button></div>';
+            h+='<div style="display:flex;gap:0.3rem;align-items:center;"><span class="badge" style="background:rgba(45,106,53,0.15);color:var(--green);font-size:0.68rem;">✅ Released</span>';
+            h+='<button class="btn-secondary" style="font-size:0.65rem;padding:0.15rem 0.4rem;" onclick="hjRetractFromMC(\''+hjKey.replace(/'/g,"\\'")+'\')">↩</button></div>';
+          }
           }
           h+='</div>';
         });
