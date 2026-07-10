@@ -1052,6 +1052,7 @@ async function loadAppStateFromSupabase(){
     Object.assign(APP, d);
     console.log('✅ Setup data loaded from Supabase');
     injectContestantPhotos(); // Re-apply default photos after sync
+    queueAppStateSync(); // Push re-injected profiles back to Supabase
     // Re-sync event properties from code defaults
     Object.entries(PD_CODE_DEFAULTS||{}).forEach(function(e){
       var evN=e[0],cd=e[1];
@@ -1793,31 +1794,27 @@ injectContestantPhotos();
 
 
 saveStateLocal(); // Persist photos to localStorage
-queueAppStateSync(); // Push updated profiles to Supabase so cloud data stays current
-// Wipe Supabase if flagged by migration
+// Wipe Supabase if flagged by migration, THEN push fresh data
 (async function(){
-  if(!APP._wipeSupabase) return;
-  if(!supabaseClient) return;
-  try{
-    console.log('🗑️ Wiping Supabase tables...');
-    // Clear scores table
-    await supabaseClient.from('scores').delete().neq('event_id','');
-    console.log('  ✅ scores table cleared');
-    // Clear approvals table
-    await supabaseClient.from('approvals').delete().neq('event_id','');
-    console.log('  ✅ approvals table cleared');
-    // Clear app_state table
-    await supabaseClient.from('app_state').delete().eq('id',1);
-    console.log('  ✅ app_state table cleared');
-    // Remove the flag
-    delete APP._wipeSupabase;
-    // Push fresh state to Supabase
-    saveStateLocal();
-    queueAppStateSync();
-    console.log('  ✅ Fresh state pushed to Supabase');
-  }catch(e){
-    console.error('Supabase wipe error:',e);
+  if(APP._wipeSupabase && supabaseClient){
+    try{
+      console.log('🗑️ Wiping Supabase tables...');
+      await supabaseClient.from('scores').delete().neq('event_id','');
+      console.log('  ✅ scores table cleared');
+      await supabaseClient.from('approvals').delete().neq('event_id','');
+      console.log('  ✅ approvals table cleared');
+      await supabaseClient.from('app_state').delete().eq('id',1);
+      console.log('  ✅ app_state table cleared');
+      delete APP._wipeSupabase;
+      saveStateLocal();
+      console.log('  ✅ Local state saved');
+    }catch(e){
+      console.error('Supabase wipe error:',e);
+    }
   }
+  // Always push fresh state to Supabase after profiles are injected
+  queueAppStateSync();
+  console.log('✅ Fresh state queued for Supabase sync');
 })();
 // Generate random test scores for testing
 // Test scores disabled - app reset for live testing
@@ -4207,6 +4204,7 @@ function injectContestantPhotos(){
   APP.contestantProfiles["GLA6"].bio="Falisi John Uhatafe, 24, from Lapaha, Kolomotuʻa, representing Alpha Car Rentals, is a Flight Attendant for American Airlines with expertise in customer service and emergency response.";
   APP.contestantProfiles["GLA7"].bio="Katieli Tuipulotu Mahe, 30, from Fangaleʻounga, Koulo, Haʻapai, representing the Tonga National Menʻs Netball Team, is a Computer Programmer at the Tonga Statistics Department.";
   APP.contestantProfiles["GLA8"].bio="Samuela Kata Taʻofi, 23, representing Echoes of Tonga Tour, is a fitness and gym trainer at Fisiʻi Saafa Gym and recognized title holder in Tongaʻs bodybuilding scene.";
+  saveStateLocal(); // Always save after injecting profiles
 }
 
 var projTimer=null;
