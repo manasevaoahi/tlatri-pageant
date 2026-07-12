@@ -902,6 +902,7 @@ function cLabel(c){
 var ADMIN_PIN='1992', ADMIN_HINT='TLA';
 var APP={logoDataUrl:null,currentRole:null,currentJudge:null,currentAuditor:null,currentMC:null,currentEvent:null,currentContestant:null,pendingRole:null,contestants:{},judges:[],auditors:[],mcs:[],scores:{},unlockedScores:{},awards:[],offlineQueue:[],isOnline:true,testMode:true,dayTestMode:{},displayMode:'category',lockedEvents:{},activeJudgingEvent:null,displaySettings:null,resubRequests:{},mcPin:null,bgImages:{},contestantProfiles:{},roleProfiles:{judges:{},auditors:{},mc:{}},readyForMC:{},displayReleased:{},behaviouralScores:{},behaviouralSubmissions:{},sponsors:[],clearedResults:{},finalsVerified:false,finalsToHJ:false,hjReleasedToMC:{},finalsPublished:{},allScoresLocked:false};
 var _lastEditTime=0;
+var _pendingPush=false;
 function markUserEdited(){_lastEditTime=Date.now();}
 // Behavioural criteria (scored by assistant judges — deducted from contestant grand total)
 var BEHAVIOURAL_CRITERIA=[
@@ -943,7 +944,7 @@ async function initSupabase() {
       { event: '*', schema: 'public', table: 'scores' },
       (payload) => {
         console.log('Score update received:', payload);
-        loadScoresFromSupabase().then(function(){if(!isUserEditing()&&Date.now()-_lastEditTime>2000)refreshCurrentScreen();});
+        loadScoresFromSupabase().then(function(){if(!isUserEditing()&&Date.now()-_lastEditTime>3000)refreshCurrentScreen();});
       }
     )
     .subscribe();
@@ -1030,13 +1031,14 @@ async function saveAppStateToSupabase(){
   if (error) {
     console.error('Error saving app setup data to Supabase:', error);
   } else {
-    console.log('✅ Setup data (contestants/judges/settings) synced to all devices');
+    _pendingPush=false;
+    console.log('✅ Setup data synced to all devices. Pull enabled.');
   }
 }
 
 async function loadAppStateFromSupabase(){
     // Skip sync if user just saved — wait for push to complete first
-    if(Date.now()-_lastEditTime<5000){console.log('⏸️ Skipping Supabase pull — recent local edit');return;}
+    if(_pendingPush||Date.now()-_lastEditTime<10000){console.log('⏸️ Skipping Supabase pull — push pending or recent edit');return;}
   if (!supabaseClient) return;
   const { data, error } = await supabaseClient
     .from('app_state')
@@ -1053,15 +1055,71 @@ async function loadAppStateFromSupabase(){
     if (d.pdDays) { PD.days = d.pdDays; delete d.pdDays; }
     if (d.mcPin) { MC_PIN = d.mcPin; delete d.mcPin; }
     if (d.mcHint) { MC_HINT = d.mcHint; delete d.mcHint; }
-    Object.assign(APP, d);
-    // Safety: ensure contestants are never empty after sync
-    if(!APP.contestants||!Object.keys(APP.contestants).length||PD.categories.some(function(cat){return !APP.contestants[cat]||!APP.contestants[cat].length;})){
-      console.log('⚠️ Contestants empty after sync — reinitializing from defaults');
-      APP.contestants={};
-      initDefaultContestants();
+    // Preserve DEVICE-LOCAL preferences only — shared collaborative data must sync freely
+    var _preservedSettings={
+      testMode:APP.testMode,
+      dayTestMode:APP.dayTestMode?JSON.parse(JSON.stringify(APP.dayTestMode)):{}
+    };
+    // Smart merge: only update fields that should sync, never overwrite local data with empty/stale cloud data
+    // Scores come from separate Supabase table — never overwrite from app_state
+    delete d.scores;
+    delete d.unlockedScores;
+    delete d._dataVersion;
+    delete d.pdEvents;
+    delete d.pdDays;
+    delete d.mcPin;
+    delete d.mcHint;
+    // Deep merge for profiles — preserve locally-added data, only add missing fields from cloud
+    if(d.contestantProfiles){
+      if(!APP.contestantProfiles)APP.contestantProfiles={};
+      Object.keys(d.contestantProfiles).forEach(function(id){
+        if(!APP.contestantProfiles[id])APP.contestantProfiles[id]={};
+        Object.keys(d.contestantProfiles[id]).forEach(function(field){
+          if(d.contestantProfiles[id][field]!==undefined && d.contestantProfiles[id][field]!==null && d.contestantProfiles[id][field]!==''){
+            APP.contestantProfiles[id][field]=d.contestantProfiles[id][field];
+          }
+        });
+      });
+      delete d.contestantProfiles;
     }
+    // Deep merge for role profiles (judge bios) — never overwrite with empty
+    if(d.roleProfiles){
+      if(!APP.roleProfiles)APP.roleProfiles={judges:{},auditors:{},mc:{}};
+      ['judges','auditors','mc'].forEach(function(type){
+        if(d.roleProfiles[type]){
+          if(!APP.roleProfiles[type])APP.roleProfiles[type]={};
+          Object.keys(d.roleProfiles[type]).forEach(function(id){
+            if(!APP.roleProfiles[type][id])APP.roleProfiles[type][id]={};
+            Object.keys(d.roleProfiles[type][id]).forEach(function(field){
+              if(d.roleProfiles[type][id][field]!==undefined && d.roleProfiles[type][id][field]!==null && d.roleProfiles[type][id][field]!==''){
+                APP.roleProfiles[type][id][field]=d.roleProfiles[type][id][field];
+              }
+            });
+          });
+        }
+      });
+      delete d.roleProfiles;
+    }
+    // Merge remaining fields (approvals, releases, display settings, etc.)
+    Object.keys(d).forEach(function(key){
+      if(d[key]!==undefined && d[key]!==null){
+        APP[key]=d[key];
+      }
+    });
+    // Safety: only reinitialize contestants if completely missing
+    if(!APP.contestants||typeof APP.contestants!=='object'){APP.contestants={};initDefaultContestants();}
     console.log('✅ Setup data loaded from Supabase');
-    injectContestantPhotos(); // Re-apply default photos/bios/outfits after sync
+    // Restore locally-saved settings — prevents cloud from resetting admin preferences
+    // Cloud settings only apply on first-ever load (when local has defaults)
+    var _localState=null;
+    try{var _ls=localStorage.getItem('tp2026v3');if(_ls)_localState=JSON.parse(_ls);}catch(e){}
+    Object.keys(_preservedSettings).forEach(function(k){
+      // If we had local data for this setting, keep local version
+      if(_localState && _localState[k]!==undefined){
+        APP[k]=_preservedSettings[k];
+      }
+    });
+    injectContestantPhotos(false); // Re-apply defaults in memory only (don't overwrite localStorage)
     // Profiles re-injected from code defaults (only empty fields filled)
     // Re-sync event properties from code defaults
     Object.entries(PD_CODE_DEFAULTS||{}).forEach(function(e){
@@ -1309,6 +1367,9 @@ function fbMonitorConnection(){
 
 async function init(){
   loadState();
+  // Protect local data from being overwritten by Supabase on initial page load
+  // The Supabase pull will be skipped for 5 seconds, giving the push time to sync
+  if(localStorage.getItem('tp2026v3')){_lastEditTime=Date.now();}
   showLoadingScreen();
   await initSupabase();
   setTimeout(finishInit, 300);
@@ -1316,7 +1377,8 @@ async function init(){
 
 function finishInit(){
   initDefaultJudges(); initDefaultAuditors(); initDefaultMCs(); initDefaultContestants();
-  syncHardcodedNames();
+  // syncHardcodedNames only runs in migrations now — not on every load
+  // This preserves admin name edits
   initTestScores();
   if(!APP.displayMode)APP.displayMode='day';
   if(!APP.displaySettings) APP.displaySettings={showEventScores:true,showCategoryOverall:true,showAwards:false,enabledEvents:{},revealedCategories:{}};
@@ -1520,7 +1582,13 @@ function getTopN(evName,cat){
   return 4;
 }
 var PD_DAYS_DEFAULTS=JSON.parse(JSON.stringify(PD.days));
-var APP_DATA_VERSION=20; // Bump this number whenever you change default criteria in the code
+var APP_DATA_VERSION=20;
+// ⚠️ SAFE UPDATE RULES:
+// 1. Simple code changes (UI fixes, labels): just upload to GitHub. No version bump needed.
+// 2. If you add a new migration: bump version to 21, 22, etc.
+// 3. NEVER add APP.scores={} in a new migration after live scoring begins!
+// 4. NEVER set APP._wipeSupabase=true in a new migration after live scoring begins!
+ // Bump this number whenever you change default criteria in the code
 
 
 
@@ -1792,9 +1860,9 @@ function loadState(){
   }
 }
 function saveState(){
-  markUserEdited(); // Prevent auto-refresh from wiping the screen for 3 seconds after any save
-  saveStateLocal();
-  queueAppStateSync();
+  markUserEdited();
+  _pendingPush=true; // Prevent auto-refresh from wiping the screen for 3 seconds after any save
+  saveState();
 }
 
 // Test score injection removed for live deployment
@@ -1939,7 +2007,7 @@ function verifyPIN(){
   if(!APP.judges||APP.judges.length===0){initDefaultJudges();}
   if(!APP.auditors||APP.auditors.length===0){initDefaultAuditors();}
   if(!APP.mcs||APP.mcs.length===0){initDefaultMCs();}
-  syncHardcodedNames();
+  // syncHardcodedNames removed — only runs in migrations to preserve admin edits
 
   var matched=false;
   if(APP.pendingRole==='admin'){
@@ -3373,8 +3441,7 @@ function confirmResetBehavioural(){
 function resetBehavioural(){
   APP.behaviouralScores={};
   APP.behaviouralSubmissions={};
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   closeModal();
   adminTab('settings',null);
   toast('\U0001f9e0 Behavioural assessments reset to zero','success');
@@ -3396,8 +3463,7 @@ async function clearAll(){
   APP.clearedResults={};
   // Reset display settings
   if(APP.displaySettings){APP.displaySettings.enabledEvents={};APP.displaySettings.revealedCategories={};APP.displaySettings.awardsReleased=false;}
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   await clearScoresAndApprovalsInSupabase();
   toast('\u2705 Full system reset complete \u2014 all dashboards cleared','success');
   closeModal();
@@ -3439,8 +3505,7 @@ async function doResetDay(day){
     if(APP.finalsPublished)delete APP.finalsPublished['fev:'+ev];
   });
   if(APP.finalsToHJ){APP.finalsToHJ=false;APP.finalsVerified=false;APP.allScoresLocked=false;}
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   await clearScoresAndApprovalsInSupabase(evs);
   toast('\u2705 '+dayLabel(day)+' fully reset','success');
   closeModal();
@@ -4120,7 +4185,7 @@ function getEventDay(evName){
   return 0;
 }
 // Auto-injected contestant photos
-function injectContestantPhotos(){
+function injectContestantPhotos(doSave){
   if(!APP.contestantProfiles)APP.contestantProfiles={};
   if(!APP.contestantProfiles['GLA1'])APP.contestantProfiles['GLA1']={};
   if(!APP.contestantProfiles['GLA1'].photo)APP.contestantProfiles['GLA1'].photo='data:image/jpeg;base64,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';
@@ -4214,7 +4279,7 @@ function injectContestantPhotos(){
   if(!APP.contestantProfiles["GLA6"].bio)APP.contestantProfiles["GLA6"].bio="Falisi John Uhatafe, 24, from Lapaha, Kolomotuʻa, representing Alpha Car Rentals, is a Flight Attendant for American Airlines with expertise in customer service and emergency response.";
   if(!APP.contestantProfiles["GLA7"].bio)APP.contestantProfiles["GLA7"].bio="Katieli Tuipulotu Mahe, 30, from Fangaleʻounga, Koulo, Haʻapai, representing the Tonga National Menʻs Netball Team, is a Computer Programmer at the Tonga Statistics Department.";
   if(!APP.contestantProfiles["GLA8"].bio)APP.contestantProfiles["GLA8"].bio="Samuela Kata Taʻofi, 23, representing Echoes of Tonga Tour, is a fitness and gym trainer at Fisiʻi Saafa Gym and recognized title holder in Tongaʻs bodybuilding scene.";
-  saveStateLocal(); // Always save after injecting profiles
+  if(doSave!==false) saveStateLocal(); // Save after injecting profiles (skip during sync)
 }
 
 var projTimer=null;
@@ -5099,8 +5164,7 @@ function mcPublishToDisplay(evKey){
   if(!APP.displaySettings)APP.displaySettings={showEventScores:true,showCategoryOverall:true,showAwards:true,enabledEvents:{},revealedCategories:{}};
   if(!APP.displaySettings.enabledEvents)APP.displaySettings.enabledEvents={};
   APP.displaySettings.enabledEvents[evKey]=true;
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   renderMCScreen();
   var parts=evKey.split('__');
   var label=parts.length>1?parts[0]+' — '+catLabel(parts[1]):evKey;
@@ -5111,8 +5175,7 @@ function mcPublishToDisplay(evKey){
 function mcRetractFromDisplay(evKey){
   if(APP.displayReleased)delete APP.displayReleased[evKey];
   if(APP.displaySettings&&APP.displaySettings.enabledEvents)APP.displaySettings.enabledEvents[evKey]=false;
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   renderMCScreen();
   var _rParts=evKey.split('__');
   var _rLabel=_rParts.length>1?_rParts[0]+' — '+catLabel(_rParts[1]):evKey;
@@ -5121,8 +5184,7 @@ function mcRetractFromDisplay(evKey){
 function mcPublishFinal(fpKey,label){
   if(!APP.finalsPublished)APP.finalsPublished={};
   APP.finalsPublished[fpKey]=true;
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   renderMCScreen();
   toast('\ud83d\udcfa '+label+' published to display!','success');
   var pp=document.getElementById('screen-projector');
@@ -5130,8 +5192,7 @@ function mcPublishFinal(fpKey,label){
 }
 function mcRetractFinal(fpKey){
   if(APP.finalsPublished)delete APP.finalsPublished[fpKey];
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   renderMCScreen();
   toast('Retracted from display','info');
 }
@@ -5865,8 +5926,7 @@ function retractFromHJ(){
   if(!confirm('Retract finals from Head Judge? This will also unlock all scores.'))return;
   APP.finalsToHJ=false;APP.finalsVerified=false;APP.hjReleasedToMC={};
   APP.allScoresLocked=false;
-  saveStateLocal();
-  queueAppStateSync();
+  saveState();
   auditorTab('finals',null);
   toast('\u21a9 Finals retracted \u2014 scores unlocked','info');
 }
@@ -6174,7 +6234,7 @@ function setupAutoRefresh(){
   setInterval(async function(){
     if (!supabaseClient) return; // not connected yet — nothing to pull
     // Skip if user edited something in the last 3 seconds
-    if(Date.now()-_lastEditTime<3000){console.log('⏸️ Skipping auto-refresh — recent edit');return;}
+    if(Date.now()-_lastEditTime<15000){console.log('⏸️ Skipping auto-refresh — recent edit');return;}
     if(isUserEditing()){console.log('⏸️ Skipping auto-refresh — user is editing');return;}
     await loadScoresFromSupabase();
     await loadApprovalsFromSupabase();
