@@ -1582,7 +1582,7 @@ function getTopN(evName,cat){
   return 4;
 }
 var PD_DAYS_DEFAULTS=JSON.parse(JSON.stringify(PD.days));
-var APP_DATA_VERSION=20;
+var APP_DATA_VERSION=20; // ⛔ NEVER add score-clearing or Supabase-wiping code in migrations
 // ⚠️ SAFE UPDATE RULES:
 // 1. Simple code changes (UI fixes, labels): just upload to GitHub. No version bump needed.
 // 2. If you add a new migration: bump version to 21, 22, etc.
@@ -1738,7 +1738,7 @@ function loadState(){
         // VERSION 13: Clear scores for fresh test score injection
         if(savedVer<13){
           console.log('  🔄 v13: Clearing scores for fresh test data...');
-          APP.scores={};
+          // APP.scores={} REMOVED — never clear live scores
           APP.lockedEvents={};
           APP.readyForMC={};
           APP.displayReleased={};
@@ -1758,7 +1758,7 @@ function loadState(){
         if(savedVer<14){
           console.log('  🔄 v14: Resetting contestant profiles for photo re-injection...');
           APP.contestantProfiles={};
-          APP.scores={};
+          // APP.scores={} REMOVED — never clear live scores
           APP.contestants={};
           initDefaultContestants();
           syncHardcodedNames();
@@ -1788,7 +1788,7 @@ function loadState(){
         // VERSION 18: LIVE DEPLOYMENT — clear all test data
         if(savedVer<18){
           console.log('  🔄 v18: Clearing ALL test data for live deployment...');
-          APP.scores={};
+          // APP.scores={} REMOVED — never clear live scores
           APP.lockedEvents={};
           APP.readyForMC={};
           APP.displayReleased={};
@@ -1818,7 +1818,7 @@ function loadState(){
         // VERSION 20: FULL WIPE — clean slate for live deployment
         if(savedVer<20){
           console.log('  🔄 v20: FULL DATA WIPE for live deployment...');
-          APP.scores={};
+          // APP.scores={} REMOVED — never clear live scores
           APP.unlockedScores={};
           APP.lockedEvents={};
           APP.readyForMC={};
@@ -1843,7 +1843,7 @@ function loadState(){
           initDefaultContestants();
           syncHardcodedNames();
           // Flag to wipe Supabase on next sync
-          APP._wipeSupabase=true;
+          // _wipeSupabase REMOVED — never wipe cloud data
           console.log('  ✅ v20: All local data wiped. Supabase will be wiped on next sync.');
         }
         // Save the upgraded version and sync to all devices
@@ -1872,28 +1872,8 @@ injectContestantPhotos();
 
 
 saveStateLocal(); // Persist photos to localStorage
-// Wipe Supabase if flagged by migration, THEN push fresh data
-(async function(){
-  if(APP._wipeSupabase && supabaseClient){
-    try{
-      console.log('🗑️ Wiping Supabase tables...');
-      await supabaseClient.from('scores').delete().neq('event_id','');
-      console.log('  ✅ scores table cleared');
-      await supabaseClient.from('approvals').delete().neq('event_id','');
-      console.log('  ✅ approvals table cleared');
-      await supabaseClient.from('app_state').delete().eq('id',1);
-      console.log('  ✅ app_state table cleared');
-      delete APP._wipeSupabase;
-      saveStateLocal();
-      console.log('  ✅ Local state saved');
-    }catch(e){
-      console.error('Supabase wipe error:',e);
-    }
-  }
-  // Always push fresh state to Supabase after profiles are injected
-  queueAppStateSync();
-  console.log('✅ Fresh state queued for Supabase sync');
-})();
+// Supabase wipe code permanently removed — cloud data must never be wiped by code
+
 // Generate random test scores for testing
 // Test scores disabled - app reset for live testing
 
